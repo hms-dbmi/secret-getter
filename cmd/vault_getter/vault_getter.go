@@ -61,7 +61,7 @@ func main() {
 		}
 	}
 
-	logger.Info("args left", zap.Object("args", args))
+	//logger.Info("args left", zap.Object("args", args))
 
 	if err := execute(args); err != nil {
 		logger.Fatal("failed to execute command",
@@ -105,7 +105,7 @@ func initClient() *api.Client {
 		*token = vaultToken
 	}
 
-	logger.Info("vault token", zap.Object("token", *token))
+	//logger.Info("vault token", zap.Object("token", *token))
 	client.SetToken(*token)
 
 	if vaultPath := os.Getenv("VAULT_PATH"); *path == "" {
@@ -151,7 +151,7 @@ func loadFiles(files []string, secrets *map[string]string) {
 		//var lines []string
 		for scanner.Scan() {
 			line := scanner.Text()
-			logger.Info("", zap.String("line", line))
+			//logger.Info("", zap.String("line", line))
 			//captures := make(map[string][])
 			match := exp.FindAllStringSubmatch(line, -1)
 			if match == nil || len(match) == 0 {
@@ -160,16 +160,16 @@ func loadFiles(files []string, secrets *map[string]string) {
 			}
 
 			// search through all found variable matches
-			logger.Info("match", zap.Object("match", match), zap.Object("len", len(match)))
+			//logger.Info("match", zap.Object("match", match), zap.Object("len", len(match)))
 			for j := range match {
 				for i, name := range exp.SubexpNames() {
 					if name != "var" {
 						continue
 					}
-					logger.Info("", zap.Object("name", name), zap.Object("match", match[j][i]))
+					//logger.Info("", zap.Object("name", name), zap.Object("match", match[j][i]))
 					// replace
 					variable := match[j][i]
-					logger.Info("", zap.Object("variable", variable), zap.Object("value", (*secrets)[variable]))
+					//logger.Info("", zap.Object("variable", variable), zap.Object("value", (*secrets)[variable]))
 
 					if (*secrets)[variable] != "" {
 						// use env variable instead of vault (if env has precedence)
@@ -179,7 +179,7 @@ func loadFiles(files []string, secrets *map[string]string) {
 
 						line = strings.Replace(line, match[j][0], (*secrets)[variable], 1)
 						//line := exp.ReplaceAllString(line, (*secrets)[variable])
-						logger.Info("new line", zap.Object("", line))
+						//logger.Info("new line", zap.Object("", line))
 					} else {
 						logger.Warn("unknown variable", zap.String("variable", match[j][0]))
 					}
@@ -202,7 +202,7 @@ func _writeline(writer *bufio.Writer, line *string) {
 	if line == nil {
 		return
 	}
-	logger.Info("buffer remaining", zap.Object("buffer", writer.Available()))
+	//logger.Info("buffer remaining", zap.Object("buffer", writer.Available()))
 	if writer.Available()-len(*line) < 0 {
 		writer.Flush()
 	}
@@ -212,7 +212,7 @@ func _writeline(writer *bufio.Writer, line *string) {
 func readSecrets(cli *api.Client) (*map[string]string, error) {
 
 	// temporary
-	clientToken, err := cli.Logical().Write("auth/github/login", map[string]interface{}{
+	/*clientToken, err := cli.Logical().Write("auth/github/login", map[string]interface{}{
 		"token": *token,
 	})
 
@@ -221,7 +221,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 	}
 	// end temporary
 	logger.Info("clientToken", zap.Object("client", clientToken), zap.Object("auth", clientToken.Auth), zap.Object("path", *path))
-	cli.SetToken(clientToken.Auth.ClientToken)
+	cli.SetToken(clientToken.Auth.ClientToken)*/
 
 	// return list of secret keys
 	secret, err := cli.Logical().List(*path)
@@ -237,7 +237,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 
 			key := key.(string)
 
-			logger.Debug("", zap.Object("key", key))
+			//logger.Debug("", zap.Object("key", key))
 
 			secret, err = cli.Logical().Read(*path + "/" + key)
 			if err != nil || secret == nil || secret.Data["value"] == nil {
@@ -255,8 +255,8 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 		}
 	}
 
-	for key := range secretsOut {
-		logger.Info("output", zap.Object(key, secretsOut[key]))
-	}
+	//for key := range secretsOut {
+	//logger.Info("output", zap.Object(key, secretsOut[key]))
+	//}
 	return &secretsOut, nil
 }
