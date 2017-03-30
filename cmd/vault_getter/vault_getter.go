@@ -10,18 +10,18 @@ import (
 	"syscall"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/uber-go/zap"
+	"go.uber.org/zap"
 )
 
 var (
-	addr     = flag.String("addr", "", "Vault address")
-	token    = flag.String("token", "", "Vault token")
-	path     = flag.String("path", "", "Vault path")
-	prefixes = flag.String("prefix", "{", "Front prefix")
-	suffixes = flag.String("suffix", "}", "End prefix")
-	files    = flag.String("files", "", "List of files to replace with Vault secrets")
-	order    = flag.String("order", "vault", "Order of precedence: vault or env")
-	logger   = zap.New(zap.NewTextEncoder())
+	addr      = flag.String("addr", "", "Vault address")
+	token     = flag.String("token", "", "Vault token")
+	path      = flag.String("path", "", "Vault path")
+	prefixes  = flag.String("prefix", "{", "Front prefix")
+	suffixes  = flag.String("suffix", "}", "End prefix")
+	files     = flag.String("files", "", "List of files to replace with Vault secrets")
+	order     = flag.String("order", "vault", "Order of precedence: vault or env")
+	logger, _ = zap.NewProduction()
 )
 
 func main() {
@@ -57,17 +57,13 @@ func main() {
 	for i, arg := range args {
 		if arg == "--" {
 			args = args[i+1:]
+			if err := execute(args); err != nil {
+				logger.Fatal("failed to execute command",
+					zap.Strings("args", args),
+					zap.Error(err))
+			}
 			break
 		}
-	}
-
-	//logger.Info("args left", zap.Object("args", args))
-
-	if err := execute(args); err != nil {
-		logger.Fatal("failed to execute command",
-			zap.Object("args", args),
-			zap.Object("env", os.Environ()),
-			zap.Error(err))
 	}
 
 }
@@ -127,7 +123,7 @@ func loadFiles(files []string, secrets *map[string]string) {
 	// should make sure to delimit all regex characters to prevent parsing fubar
 
 	exp := regexp.MustCompile(*prefixes + "(?P<var>[^" + *suffixes + "]*)" + *suffixes)
-	logger.Info("", zap.Object("expression", exp))
+	logger.Info("Searching for match.", zap.String("expression", exp.String()))
 	for _, file := range files {
 
 		// keep permissions the same
@@ -226,7 +222,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 	// return list of secret keys
 	secret, err := cli.Logical().List(*path)
 	if err != nil || secret.Data == nil || secret.Data["keys"] == nil {
-		logger.Error("Failed to list keys", zap.Object("token", cli.Token()), zap.Object("error", err))
+		logger.Error("Failed to list keys", zap.String("token", cli.Token()), zap.Errors("error", []error{err}))
 		return nil, err
 	}
 
