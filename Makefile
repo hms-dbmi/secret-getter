@@ -38,7 +38,7 @@ _allpackages = $(shell ( cd $(CURDIR)/.GOPATH/src/$(IMPORT_PATH) && \
 # memoize allpackages, so that it's executed only once and only if used
 allpackages = $(if $(__allpackages),,$(eval __allpackages := $$(_allpackages)))$(__allpackages)
 
-#export GOPATH := $(CURDIR)/.GOPATH
+export GOPATH := $(CURDIR)/.GOPATH
 
 .GOPATH/.ok:
 	$Q mkdir -p "$(dir .GOPATH/src/$(IMPORT_PATH))"
@@ -46,13 +46,3 @@ allpackages = $(if $(__allpackages),,$(eval __allpackages := $$(_allpackages)))$
 	$Q mkdir -p bin
 	$Q ln -s ../bin .GOPATH/bin
 	$Q touch $@
-
-.PHONY: integration
-integration: build
-	$Q ./script/integration
-
-pal-integration-image:
-	$Q docker build -t dqminh/pal:client-integration -f Dockerfile.client .
-
-pal-integration-image-push: pal-integration-image
-	$Q DOCKER_CONTENT_TRUST=1 docker push dqminh/pal:client-integration
