@@ -1,0 +1,154 @@
+{
+	"ImportPath": "github.com/hms-dbmi/vault-getter/.GOPATH/src/github.com/hms-dbmi/vault-getter",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v79",
+	"Packages": [
+		"github.com/hms-dbmi/vault-getter/cmd/vault_getter"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/fatih/structs",
+			"Comment": "v1.0",
+			"Rev": "a720dfa8df582c51dee1b36feabb906bde1588bd"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/errwrap",
+			"Rev": "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-cleanhttp",
+			"Rev": "3573b8b52aa7b37b9358d966a898feb387f62437"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-multierror",
+			"Rev": "ed905158d87462226a13fe39ddf685ea65f1c11f"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-rootcerts",
+			"Rev": "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/ast",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/parser",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/scanner",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/strconv",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/token",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/parser",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/scanner",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/token",
+			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/vault/api",
+			"Comment": "v0.7.0-66-g1f0d9b1",
+			"Rev": "1f0d9b10b681bed514f55fb35624efd679fb8fb1"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/vault/helper/compressutil",
+			"Comment": "v0.7.0-66-g1f0d9b1",
+			"Rev": "1f0d9b10b681bed514f55fb35624efd679fb8fb1"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/vault/helper/jsonutil",
+			"Comment": "v0.7.0-66-g1f0d9b1",
+			"Rev": "1f0d9b10b681bed514f55fb35624efd679fb8fb1"
+		},
+		{
+			"ImportPath": "github.com/hms-dbmi/vault-getter/cmd/vault_getter",
+			"Rev": "67eeba5fb2f20f9c3dc3aee048700e5759102716"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-homedir",
+			"Rev": "b8bc1bf767474819792c23f32d8286a45736f1c6"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "53818660ed4955e899c0bcafa97299a388bd7c8e"
+		},
+		{
+			"ImportPath": "github.com/sethgrid/pester",
+			"Rev": "2c5fb962da6113d0968907fd81dba3ca35151d1c"
+		},
+		{
+			"ImportPath": "go.uber.org/atomic",
+			"Comment": "v1.1.0",
+			"Rev": "3b8db5e93c4c02efbc313e17b2e796b0914a01fb"
+		},
+		{
+			"ImportPath": "go.uber.org/zap",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "go.uber.org/zap/buffer",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "go.uber.org/zap/internal/bufferpool",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "go.uber.org/zap/internal/color",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "go.uber.org/zap/internal/exit",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "go.uber.org/zap/internal/multierror",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "go.uber.org/zap/zapcore",
+			"Comment": "v1.0.0-7-ge33fbf6",
+			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2",
+			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2/hpack",
+			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+		},
+		{
+			"ImportPath": "golang.org/x/net/idna",
+			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+		},
+		{
+			"ImportPath": "golang.org/x/net/lex/httplex",
+			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+		}
+	]
+}
