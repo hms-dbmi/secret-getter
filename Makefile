@@ -1,5 +1,5 @@
 VERSION := ${shell cat ./VERSION}
-IMPORT_PATH := github.com/recursethis/vault-getter
+IMPORT_PATH := github.com/hms-dbmi/vault-getter
 VERSION_FLAGS    := -ldflags='-X "main.Version=$(VERSION)"'
 
 Q := $(if $V,,@)
