@@ -149,6 +149,22 @@
 		{
 			"ImportPath": "golang.org/x/net/lex/httplex",
 			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/bidirule",
+			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/bidi",
+			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
 		}
 	]
 }
