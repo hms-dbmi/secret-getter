@@ -40,9 +40,12 @@ func main() {
 
 	client := initClient()
 	// get secrets
-	decryptedSecrets, _ := readSecrets(client)
+	decryptedSecrets, err := readSecrets(client)
+
 	// variable replacement
-	loadFiles(strings.Split(*files, ","), decryptedSecrets)
+	if err == nil {
+		loadFiles(strings.Split(*files, ","), decryptedSecrets)
+	}
 	// run next command
 
 	/*logger.Info("output: ", zap.Object("client", client), zap.Object("response", secret))
@@ -222,7 +225,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 	// return list of secret keys
 	secret, err := cli.Logical().List(*path)
 	if err != nil || secret.Data == nil || secret.Data["keys"] == nil {
-		logger.Error("Failed to list keys", zap.String("token", cli.Token()), zap.Errors("error", []error{err}))
+		logger.Error("Failed to list keys", zap.Errors("error", []error{err}))
 		return nil, err
 	}
 
