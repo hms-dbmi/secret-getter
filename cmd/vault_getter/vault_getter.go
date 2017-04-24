@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -44,7 +45,7 @@ func main() {
 
 	// variable replacement
 	if err == nil {
-		loadFiles(strings.Split(*files, ","), decryptedSecrets)
+		loadFiles(strings.Split(*files, ","), decryptedSecrets, false)
 	}
 	// run next command
 
@@ -119,7 +120,7 @@ func initClient() *api.Client {
 
 }
 
-func loadFiles(files []string, secrets *map[string]string) {
+func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 
 	// exp = prefix (?P<var>[^suffix]*) suffix, e.g ${variable to index}
 	// for now, expect delimited strings, e.g. \\$ must be defined by user,
@@ -135,6 +136,19 @@ func loadFiles(files []string, secrets *map[string]string) {
 			logger.Fatal("Could not get stats on file", zap.Error(err))
 		}
 
+		// if this is a directory, load those files, then move through to next element
+		if _isDirectory(info) {
+			// prevent recursive (symlinks) and/or deep file loading.
+			// sub dirctories need to be explicitly be in the files list
+			// e.g. -files=/path/to/dir,/path/to/dir/subdir,
+			if !skipDir {
+				loadFiles(_getDirectoryFiles(file), secrets, true)
+			}
+			continue
+		}
+
+		logger.Info(" blah ", zap.Strings("file", files))
+		// open file and start reading it line-by-line
 		fi, err := os.OpenFile(file, os.O_RDONLY, info.Mode())
 		if err != nil {
 			logger.Fatal("Could not read file", zap.Error(err))
@@ -195,6 +209,31 @@ func loadFiles(files []string, secrets *map[string]string) {
 		fo.Close()
 		os.Rename(file+".tmp", file)
 	}
+}
+
+func _isDirectory(info os.FileInfo) bool {
+	// if this file is a directory,
+	// get files from directory, and append to files Object
+	switch mode := info.Mode(); {
+	case mode.IsDir():
+		logger.Info(info.Name() + " is a directory.")
+		return true
+	}
+	return false
+}
+
+func _getDirectoryFiles(path string) []string {
+	dirfiles, err := ioutil.ReadDir(path)
+	if err != nil {
+		logger.Fatal("Could not read directory", zap.Error(err))
+	}
+
+	var files []string
+	for _, dirfile := range dirfiles {
+		logger.Info("appending ", zap.String("file", path+"/"+dirfile.Name()))
+		files = append(files, path+"/"+dirfile.Name())
+	}
+	return files
 }
 
 func _writeline(writer *bufio.Writer, line *string) {
