@@ -147,7 +147,6 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 			continue
 		}
 
-		logger.Info(" blah ", zap.Strings("file", files))
 		// open file and start reading it line-by-line
 		fi, err := os.OpenFile(file, os.O_RDONLY, info.Mode())
 		if err != nil {
@@ -285,6 +284,9 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 
 			// standard format
 			// hack
+			// TODO: FIX THIS. This limits our secrets options to stack/stack_key
+			// If stack/stack_key exists, THEN split, and keep legacy and new format
+			// We *could* keep original format AND uppercase .... something to think about
 			if std := (strings.SplitN(key, "_", 2))[1]; std != "" {
 				secretsOut[strings.ToUpper(std)] = secret.Data["value"].(string)
 			}
