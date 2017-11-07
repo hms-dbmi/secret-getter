@@ -293,7 +293,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 				std = strings.ToUpper(std)
 				secretsOut[std] = secret.Data["value"].(string)
 				// order=override will override environment variables with vault values
-				if _, ok := os.LookupEnv(std); *order == "override" && ok {
+				if _, ok = os.LookupEnv(std); *order == "override" && ok {
 					os.Setenv(std, secretsOut[std])
 				}
 			}
@@ -301,7 +301,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 			// legacy format
 			secretsOut[key] = secret.Data["value"].(string)
 			// order=override will override environment variables with vault values
-			if _, ok := os.LookupEnv(key); *order == "override" && ok {
+			if _, ok = os.LookupEnv(key); *order == "override" && ok {
 				os.Setenv(key, secretsOut[key])
 			}
 		}
