@@ -21,7 +21,7 @@ var (
 	prefixes  = flag.String("prefix", "{", "Front prefix")
 	suffixes  = flag.String("suffix", "}", "End prefix")
 	files     = flag.String("files", "", "List of files to replace with Vault secrets")
-	order     = flag.String("order", "vault", "Order of precedence: vault or env")
+	order     = flag.String("order", "vault", "Order of precedence: vault, env, override")
 	logger, _ = zap.NewProduction()
 )
 
@@ -184,7 +184,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 					//logger.Info("", zap.Object("variable", variable), zap.Object("value", (*secrets)[variable]))
 
 					if (*secrets)[variable] != "" {
-						// use env variable instead of vault (if env has precedence)
+						// order==env will use environment variable non-empty value instead of vault value
 						if *order == "env" && os.Getenv(variable) != "" {
 							(*secrets)[variable] = os.Getenv(variable)
 						}
@@ -282,21 +282,30 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 				continue
 			}
 
-			// standard format
-			// hack
-			// TODO: FIX THIS. This limits our secrets options to stack/stack_key
+			// HACK TODO: FIX THIS. This limits our secrets options to stack/stack_key
 			// If stack/stack_key exists, THEN split, and keep legacy and new format
 			// We *could* keep original format AND uppercase .... something to think about
+			// Ideally, we should *not* be making guesses on the format of the key
+			// e.g nhanes-prod_secret -> nhanes-prod_secret (legayc) && SECRET - Andre
+
+			// standard format
 			if std := (strings.SplitN(key, "_", 2))[1]; std != "" {
-				secretsOut[strings.ToUpper(std)] = secret.Data["value"].(string)
+				std = strings.ToUpper(std)
+				secretsOut[std] = secret.Data["value"].(string)
+				// order=override will override environment variables with vault values
+				if _, ok := os.LookupEnv(std); *order == "override" && ok {
+					os.Setenv(std, secretsOut[std])
+				}
 			}
+
 			// legacy format
 			secretsOut[key] = secret.Data["value"].(string)
+			// order=override will override environment variables with vault values
+			if _, ok := os.LookupEnv(key); *order == "override" && ok {
+				os.Setenv(key, secretsOut[key])
+			}
 		}
 	}
 
-	//for key := range secretsOut {
-	//logger.Info("output", zap.Object(key, secretsOut[key]))
-	//}
 	return &secretsOut, nil
 }
