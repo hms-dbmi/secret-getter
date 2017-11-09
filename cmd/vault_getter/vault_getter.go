@@ -286,15 +286,14 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 			// If stack/stack_key exists, THEN split, and keep legacy and new format
 			// We *could* keep original format AND uppercase .... something to think about
 			// Ideally, we should *not* be making guesses on the format of the key
-			// e.g nhanes-prod_secret -> nhanes-prod_secret (legayc) && SECRET - Andre
+			// e.g nhanes-prod_secret -> nhanes-prod_secret (legacy) && SECRET - Andre
 
 			// standard format
 			if std := (strings.SplitN(key, "_", 2))[1]; std != "" {
 				std = strings.ToUpper(std)
 				secretsOut[std] = secret.Data["value"].(string)
 				// order=override will override environment variables with vault values
-				_, ok := os.LookupEnv(std)
-				if *order == "override" && ok {
+				if _, exists := os.LookupEnv(std); *order == "override" && exists {
 					os.Setenv(std, secretsOut[std])
 				}
 			}
@@ -302,8 +301,7 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 			// legacy format
 			secretsOut[key] = secret.Data["value"].(string)
 			// order=override will override environment variables with vault values
-			_, ok := os.LookupEnv(key)
-			if *order == "override" && ok {
+			if _, exists := os.LookupEnv(key); *order == "override" && exists {
 				os.Setenv(key, secretsOut[key])
 			}
 		}
