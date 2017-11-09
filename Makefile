@@ -11,7 +11,7 @@ all: test build
 
 .PHONY: hello
 build: .GOPATH/.ok
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/vault_getter
+	$Q go install $(if $V,-v) $(VERSION_FLAGS) -installsuffix cgo $(IMPORT_PATH)/cmd/vault_getter
 
 .PHONY: clean
 clean:
