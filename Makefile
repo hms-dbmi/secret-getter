@@ -35,8 +35,8 @@ format: .GOPATH/.ok
 	$Q find .GOPATH/src/$(IMPORT_PATH)/ -iname \*.go | grep -v -e "^$$" $(addprefix -e ,$(IGNORED_PACKAGES)) | xargs goimports -w
 
 # cd into the GOPATH to workaround ./... not following symlinks
-_allpackages = $(shell ( cd $(CURDIR)/.GOPATH/src/$(IMPORT_PATH) && \
-							 GOPATH=$(CURDIR)/.GOPATH go list ./... 2>&1 1>&3 | \
+_allpackages = $(shell ( cd "$(CURDIR)"/.GOPATH/src/$(IMPORT_PATH) && \
+							 GOPATH="$(CURDIR)"/.GOPATH go list ./... 2>&1 1>&3 | \
 							 grep -v -e "^$$" $(addprefix -e ,$(IGNORED_PACKAGES)) 1>&2 ) 3>&1 | \
 							 grep -v -e "^$$" $(addprefix -e ,$(IGNORED_PACKAGES)))
 
