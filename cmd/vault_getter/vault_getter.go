@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/hashicorp/vault/api"
+	"github.com/hms-dbmi/vault-getter/client"
 	"go.uber.org/zap"
 )
 
@@ -39,9 +39,9 @@ func main() {
 	      }
 	*/
 
-	client := initClient()
+	vault := initClient()
 	// get secrets
-	decryptedSecrets, err := readSecrets(client)
+	decryptedSecrets, err := readSecrets(vault)
 
 	// variable replacement
 	if err == nil {
@@ -85,28 +85,31 @@ func execute(argv []string) error {
 
 var execFunc = syscall.Exec
 
-func initClient() *api.Client {
+func initClient() *client.Vault {
 
 	// specific environment variable. VAULT_ADDR, VAULT_TOKEN, VAULT_PATH
 	// Vault address
 	// Vault path
 	// Vault access token are encrypted variables
-	client, err := api.NewClient(nil)
-	if err != nil {
-		logger.Fatal("faled to initialize Vault client", zap.Error(err))
-	}
+	vault := &client.Vault{}
+	vault.NewClient()
+	//if err != nil {
+	//	logger.Fatal("faled to initialize Vault client", zap.Error(err))
+	//}
 
 	if vaultAddr := os.Getenv("VAULT_ADDR"); *addr == "" {
 		*addr = vaultAddr
 	}
-	client.SetAddress(*addr)
+	logger.Info("vault addr", zap.String("addr", *addr))
+	println(vault.Client.Address())
+	vault.Client.SetAddress(*addr)
 
 	if vaultToken := os.Getenv("VAULT_TOKEN"); *token == "" {
 		*token = vaultToken
 	}
 
 	//logger.Info("vault token", zap.Object("token", *token))
-	client.SetToken(*token)
+	vault.Client.SetToken(*token)
 
 	if vaultPath := os.Getenv("VAULT_PATH"); *path == "" {
 		*path = vaultPath
@@ -116,7 +119,7 @@ func initClient() *api.Client {
 		logger.Fatal("Vault path must be defined")
 	}
 
-	return client
+	return vault
 
 }
 
@@ -160,28 +163,26 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 		}
 		writer := bufio.NewWriter(fo)
 
-		//var lines []string
 		for scanner.Scan() {
 			line := scanner.Text()
-			//logger.Info("", zap.String("line", line))
+			logger.Info("", zap.String("line", line))
 			//captures := make(map[string][])
 			match := exp.FindAllStringSubmatch(line, -1)
 			if match == nil || len(match) == 0 {
+				logger.Info("no matches found")
 				_writeline(writer, &line)
 				continue
 			}
 
 			// search through all found variable matches
-			//logger.Info("match", zap.Object("match", match), zap.Object("len", len(match)))
 			for j := range match {
 				for i, name := range exp.SubexpNames() {
 					if name != "var" {
 						continue
 					}
-					//logger.Info("", zap.Object("name", name), zap.Object("match", match[j][i]))
+					logger.Info("", zap.String("name", name), zap.String("match", match[j][i]))
 					// replace
 					variable := match[j][i]
-					//logger.Info("", zap.Object("variable", variable), zap.Object("value", (*secrets)[variable]))
 
 					if (*secrets)[variable] != "" {
 						// order==env will use environment variable non-empty value instead of vault value
@@ -190,17 +191,15 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 						}
 
 						line = strings.Replace(line, match[j][0], (*secrets)[variable], 1)
-						//line := exp.ReplaceAllString(line, (*secrets)[variable])
-						//logger.Info("new line", zap.Object("", line))
+
 					} else {
-						logger.Warn("unknown variable", zap.String("variable", match[j][0]))
+						logger.Warn("unknown variable found", zap.String("variable", match[j][0]))
 					}
 				}
 			}
 
 			_writeline(writer, &line)
-			//lines := append(lines, line)
-			//logger.Info("lines", zap.Object("", lines))
+			logger.Info("lines", zap.String("", line))
 
 		}
 		writer.Flush()
@@ -246,41 +245,19 @@ func _writeline(writer *bufio.Writer, line *string) {
 	writer.WriteString(*line + "\n")
 }
 
-func readSecrets(cli *api.Client) (*map[string]string, error) {
-
-	// temporary
-	/*clientToken, err := cli.Logical().Write("auth/github/login", map[string]interface{}{
-		"token": *token,
-	})
-
-	if err != nil {
-		logger.Error("error", zap.Object("error", err), zap.Object("token", *token))
-	}
-	// end temporary
-	logger.Info("clientToken", zap.Object("client", clientToken), zap.Object("auth", clientToken.Auth), zap.Object("path", *path))
-	cli.SetToken(clientToken.Auth.ClientToken)*/
+func readSecrets(cli client.Client) (*map[string]string, error) {
 
 	// return list of secret keys
-	secret, err := cli.Logical().List(*path)
-	if err != nil || secret.Data == nil || secret.Data["keys"] == nil {
-		logger.Error("Failed to list keys", zap.Errors("error", []error{err}))
-		return nil, err
-	}
-
+	secrets := cli.List(*path)
 	// get secret values
 	secretsOut := make(map[string]string)
-	if keys, ok := secret.Data["keys"].([]interface{}); ok {
+	if keys, ok := secrets.([]interface{}); ok {
 		for _, key := range keys {
 
 			key := key.(string)
 
-			//logger.Debug("", zap.Object("key", key))
-
-			secret, err = cli.Logical().Read(*path + "/" + key)
-			if err != nil || secret == nil || secret.Data["value"] == nil {
-				logger.Warn("Failed to read secret", zap.Error(err))
-				continue
-			}
+			value := cli.Read(*path + "/" + key)
+			logger.Info("", zap.String("key", key))
 
 			// HACK TODO: FIX THIS. This limits our secrets options to stack/stack_key
 			// If stack/stack_key exists, THEN split, and keep legacy and new format
@@ -291,17 +268,21 @@ func readSecrets(cli *api.Client) (*map[string]string, error) {
 			// standard format
 			if std := (strings.SplitN(key, "_", 2))[1]; std != "" {
 				std = strings.ToUpper(std)
-				secretsOut[std] = secret.Data["value"].(string)
+				secretsOut[std] = value
+				logger.Info("", zap.String("key", std))
+
 				// order=override will override environment variables with vault values
-				if _, exists := os.LookupEnv(std); *order == "override" && exists {
+				if _, ok := os.LookupEnv(std); *order == "override" && ok {
+					// note parent process env variables is not being updated
+					// requires syscall
 					os.Setenv(std, secretsOut[std])
 				}
 			}
 
 			// legacy format
-			secretsOut[key] = secret.Data["value"].(string)
+			secretsOut[key] = value
 			// order=override will override environment variables with vault values
-			if _, exists := os.LookupEnv(key); *order == "override" && exists {
+			if _, ok := os.LookupEnv(key); *order == "override" && ok {
 				os.Setenv(key, secretsOut[key])
 			}
 		}

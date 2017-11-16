@@ -11,14 +11,15 @@ all: test build
 
 .PHONY: hello
 build: .GOPATH/.ok
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) -installsuffix cgo $(IMPORT_PATH)/cmd/vault_getter
+	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/vault_getter
 
 .PHONY: clean
 clean:
-	$Q rm -rf bin .GOPATH
+	$Q rm -rf .GOPATH/.ok .GOPATH bin/vault_getter bin vault-getter
 
 .PHONY: test
 test: .GOPATH/.ok
+	$Q go get -v -d ./...
 	$Q go vet $(allpackages)
 	$Q go test -race $(allpackages)
 
@@ -30,6 +31,7 @@ lint: format
 	$Q go vet $(allpackages)
 
 format: .GOPATH/.ok
+	$Q echo $(_allpackages)
 	$Q find .GOPATH/src/$(IMPORT_PATH)/ -iname \*.go | grep -v -e "^$$" $(addprefix -e ,$(IGNORED_PACKAGES)) | xargs goimports -w
 
 # cd into the GOPATH to workaround ./... not following symlinks
@@ -41,11 +43,11 @@ _allpackages = $(shell ( cd $(CURDIR)/.GOPATH/src/$(IMPORT_PATH) && \
 # memoize allpackages, so that it's executed only once and only if used
 allpackages = $(if $(__allpackages),,$(eval __allpackages := $$(_allpackages)))$(__allpackages)
 
-export GOPATH := $(CURDIR)/.GOPATH
+SYS_GOPATH = $(shell echo $$GOPATH)
 
 .GOPATH/.ok:
+	$Q ln -s $(SYS_GOPATH) .GOPATH
 	$Q mkdir -p "$(dir .GOPATH/src/$(IMPORT_PATH))"
-	$Q ln -s ../../../.. ".GOPATH/src/$(IMPORT_PATH)"
-	$Q mkdir -p bin
-	$Q ln -s ../bin .GOPATH/bin
+	$Q ln -s $(CURDIR) ".GOPATH/src/$(IMPORT_PATH)"
+	$Q ln -s .GOPATH/bin bin
 	$Q touch $@
