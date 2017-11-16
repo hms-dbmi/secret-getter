@@ -46,8 +46,8 @@ allpackages = $(if $(__allpackages),,$(eval __allpackages := $$(_allpackages)))$
 SYS_GOPATH = $(shell echo $$GOPATH)
 
 .GOPATH/.ok:
-	$Q ln -s $(SYS_GOPATH) .GOPATH
+	$Q ln -s "$(SYS_GOPATH)" .GOPATH
 	$Q mkdir -p "$(dir .GOPATH/src/$(IMPORT_PATH))"
-	$Q ln -s $(CURDIR) ".GOPATH/src/$(IMPORT_PATH)"
+	$Q ln -s "$(CURDIR)" ".GOPATH/src/$(IMPORT_PATH)"
 	$Q ln -s .GOPATH/bin bin
 	$Q touch $@
