@@ -100,8 +100,6 @@ func initClient() *client.Vault {
 	if vaultAddr := os.Getenv("VAULT_ADDR"); *addr == "" {
 		*addr = vaultAddr
 	}
-	logger.Info("vault addr", zap.String("addr", *addr))
-	println(vault.Client.Address())
 	vault.Client.SetAddress(*addr)
 
 	if vaultToken := os.Getenv("VAULT_TOKEN"); *token == "" {

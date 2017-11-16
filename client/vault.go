@@ -12,16 +12,22 @@ type Vault struct {
 }
 
 // NewClient initialize Vault client
-func (v Vault) NewClient() {
+func (v *Vault) NewClient() {
 	var err error
 	v.Client, err = api.NewClient(nil)
 	if err != nil {
 		v.logger.Fatal("failed to initialize Vault client", zap.Error(err))
 	}
+	v.logger, err = zap.NewProduction()
+	defer v.logger.Sync()
+	if err != nil {
+		v.logger.Fatal("failed to initialize client logger", zap.Error(err))
+	}
+
 }
 
 // List returns list of keys
-func (v Vault) List(path string) interface{} {
+func (v *Vault) List(path string) interface{} {
 	secret, err := v.Client.Logical().List(path)
 	if err != nil || secret.Data == nil || secret.Data["keys"] == nil {
 		v.logger.Error("Failed to list keys", zap.Errors("error", []error{err}))
@@ -32,7 +38,7 @@ func (v Vault) List(path string) interface{} {
 }
 
 // Read returns value for path/key
-func (v Vault) Read(path string) string {
+func (v *Vault) Read(path string) string {
 	secret, err := v.Client.Logical().Read(path)
 	if err != nil || secret == nil || secret.Data["value"] == nil {
 		v.logger.Warn("Failed to read secret", zap.Error(err))
