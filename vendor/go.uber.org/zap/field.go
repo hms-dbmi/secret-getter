@@ -28,7 +28,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Skip constructs a no-op field.
+// Skip constructs a no-op field, which is often useful when handling invalid
+// inputs in other Field constructors.
 func Skip() zapcore.Field {
 	return zapcore.Field{Type: zapcore.SkipType}
 }
@@ -175,26 +176,7 @@ func Stringer(key string, val fmt.Stringer) zapcore.Field {
 // Time constructs a zapcore.Field with the given key and value. The encoder
 // controls how the time is serialized.
 func Time(key string, val time.Time) zapcore.Field {
-	return zapcore.Field{Key: key, Type: zapcore.TimeType, Integer: val.UnixNano()}
-}
-
-// Error is shorthand for the common idiom NamedError("error", err).
-func Error(err error) zapcore.Field {
-	return NamedError("error", err)
-}
-
-// NamedError constructs a field that lazily stores err.Error() under the
-// provided key. Errors which also implement fmt.Formatter (like those produced
-// by github.com/pkg/errors) will also have their verbose representation stored
-// under key+"Verbose". If passed a nil error, the field is a no-op.
-//
-// For the common case in which the key is simply "error", the Error function
-// is shorter and less repetitive.
-func NamedError(key string, err error) zapcore.Field {
-	if err == nil {
-		return Skip()
-	}
-	return zapcore.Field{Key: key, Type: zapcore.ErrorType, Interface: err}
+	return zapcore.Field{Key: key, Type: zapcore.TimeType, Integer: val.UnixNano(), Interface: val.Location()}
 }
 
 // Stack constructs a field that stores a stacktrace of the current goroutine
@@ -228,7 +210,7 @@ func Object(key string, val zapcore.ObjectMarshaler) zapcore.Field {
 // necessary.
 //
 // Since byte/uint8 and rune/int32 are aliases, Any can't differentiate between
-// them. To minimize suprise, []byte values are treated as binary blobs, byte
+// them. To minimize surprises, []byte values are treated as binary blobs, byte
 // values are treated as uint8, and runes are always treated as integers.
 func Any(key string, value interface{}) zapcore.Field {
 	switch val := value.(type) {

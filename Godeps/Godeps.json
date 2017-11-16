@@ -1,15 +1,24 @@
 {
-	"ImportPath": "github.com/hms-dbmi/vault-getter/.GOPATH/src/github.com/hms-dbmi/vault-getter",
-	"GoVersion": "go1.7",
+	"ImportPath": "github.com/hms-dbmi/vault-getter",
+	"GoVersion": "go1.9",
 	"GodepVersion": "v79",
 	"Packages": [
-		"github.com/hms-dbmi/vault-getter/cmd/vault_getter"
+		"./..."
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Comment": "v1.1.0-9-gecdeabc",
+			"Rev": "ecdeabc65495df2dec95d7c4a4c3e021903035e5"
+		},
+		{
 			"ImportPath": "github.com/fatih/structs",
-			"Comment": "v1.0",
-			"Rev": "a720dfa8df582c51dee1b36feabb906bde1588bd"
+			"Comment": "v1.0-6-gf5faa72",
+			"Rev": "f5faa72e73092639913f5833b75e1ac1d6bc7a63"
+		},
+		{
+			"ImportPath": "github.com/golang/snappy",
+			"Rev": "553a641470496b2327abcac10b36396bd98e45c9"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/errwrap",
@@ -21,7 +30,7 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-multierror",
-			"Rev": "ed905158d87462226a13fe39ddf685ea65f1c11f"
+			"Rev": "83588e72410abfbe4df460eeb6f30841ae47d4c4"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-rootcerts",
@@ -29,58 +38,59 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/ast",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/parser",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/scanner",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/strconv",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/token",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/json/parser",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/json/scanner",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/json/token",
-			"Rev": "630949a3c5fa3c613328e1b8256052cbc2327c9b"
+			"Rev": "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/vault/api",
-			"Comment": "v0.7.0-66-g1f0d9b1",
-			"Rev": "1f0d9b10b681bed514f55fb35624efd679fb8fb1"
+			"Comment": "v0.9.0-16-g09740f8",
+			"Rev": "09740f8525aa39a5e38cfd33dd27bbe0aeda255c"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/vault/helper/compressutil",
-			"Comment": "v0.7.0-66-g1f0d9b1",
-			"Rev": "1f0d9b10b681bed514f55fb35624efd679fb8fb1"
+			"Comment": "v0.9.0-16-g09740f8",
+			"Rev": "09740f8525aa39a5e38cfd33dd27bbe0aeda255c"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/vault/helper/jsonutil",
-			"Comment": "v0.7.0-66-g1f0d9b1",
-			"Rev": "1f0d9b10b681bed514f55fb35624efd679fb8fb1"
+			"Comment": "v0.9.0-16-g09740f8",
+			"Rev": "09740f8525aa39a5e38cfd33dd27bbe0aeda255c"
 		},
 		{
-			"ImportPath": "github.com/hms-dbmi/vault-getter/cmd/vault_getter",
-			"Rev": "67eeba5fb2f20f9c3dc3aee048700e5759102716"
+			"ImportPath": "github.com/hashicorp/vault/helper/parseutil",
+			"Comment": "v0.9.0-16-g09740f8",
+			"Rev": "09740f8525aa39a5e38cfd33dd27bbe0aeda255c"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/go-homedir",
@@ -88,83 +98,102 @@
 		},
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
-			"Rev": "53818660ed4955e899c0bcafa97299a388bd7c8e"
+			"Rev": "06020f85339e21b2478f756a78e295255ffa4d6a"
+		},
+		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Comment": "v1.0.0",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
 			"ImportPath": "github.com/sethgrid/pester",
-			"Rev": "2c5fb962da6113d0968907fd81dba3ca35151d1c"
+			"Rev": "0af5bab1e1ea2860c5aef8e77427bab011d774d8"
+		},
+		{
+			"ImportPath": "github.com/stretchr/objx",
+			"Rev": "1a9d0bb9f541897e62256577b352fdbc1fb4fd94"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.1.4-72-g2aa2c17",
+			"Rev": "2aa2c176b9dab406a6970f6a55f513e8a8c8b18f"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/mock",
+			"Comment": "v1.1.4-72-g2aa2c17",
+			"Rev": "2aa2c176b9dab406a6970f6a55f513e8a8c8b18f"
 		},
 		{
 			"ImportPath": "go.uber.org/atomic",
-			"Comment": "v1.1.0",
-			"Rev": "3b8db5e93c4c02efbc313e17b2e796b0914a01fb"
+			"Comment": "v1.3.1",
+			"Rev": "8474b86a5a6f79c443ce4b2992817ff32cf208b8"
+		},
+		{
+			"ImportPath": "go.uber.org/multierr",
+			"Comment": "v1.1.0-1-gfb7d312",
+			"Rev": "fb7d312c2c04c34f0ad621048bbb953b168f9ff6"
 		},
 		{
 			"ImportPath": "go.uber.org/zap",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+			"Comment": "v1.7.1-11-gf85c78b",
+			"Rev": "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 		},
 		{
 			"ImportPath": "go.uber.org/zap/buffer",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+			"Comment": "v1.7.1-11-gf85c78b",
+			"Rev": "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 		},
 		{
 			"ImportPath": "go.uber.org/zap/internal/bufferpool",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+			"Comment": "v1.7.1-11-gf85c78b",
+			"Rev": "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 		},
 		{
 			"ImportPath": "go.uber.org/zap/internal/color",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+			"Comment": "v1.7.1-11-gf85c78b",
+			"Rev": "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 		},
 		{
 			"ImportPath": "go.uber.org/zap/internal/exit",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
-		},
-		{
-			"ImportPath": "go.uber.org/zap/internal/multierror",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+			"Comment": "v1.7.1-11-gf85c78b",
+			"Rev": "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 		},
 		{
 			"ImportPath": "go.uber.org/zap/zapcore",
-			"Comment": "v1.0.0-7-ge33fbf6",
-			"Rev": "e33fbf63945229e7e100a4efb11d5cd706800445"
+			"Comment": "v1.7.1-11-gf85c78b",
+			"Rev": "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2",
-			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+			"Rev": "9dfe39835686865bff950a07b394c12a98ddc811"
 		},
 		{
 			"ImportPath": "golang.org/x/net/http2/hpack",
-			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+			"Rev": "9dfe39835686865bff950a07b394c12a98ddc811"
 		},
 		{
 			"ImportPath": "golang.org/x/net/idna",
-			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+			"Rev": "9dfe39835686865bff950a07b394c12a98ddc811"
 		},
 		{
 			"ImportPath": "golang.org/x/net/lex/httplex",
-			"Rev": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d"
+			"Rev": "9dfe39835686865bff950a07b394c12a98ddc811"
 		},
 		{
 			"ImportPath": "golang.org/x/text/secure/bidirule",
-			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
 		},
 		{
 			"ImportPath": "golang.org/x/text/transform",
-			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
 		},
 		{
 			"ImportPath": "golang.org/x/text/unicode/bidi",
-			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
 		},
 		{
 			"ImportPath": "golang.org/x/text/unicode/norm",
-			"Rev": "3aa6d803466d99ea1bdf4af99e6db53299c02bd7"
+			"Rev": "88f656faf3f37f690df1a32515b479415e1a6769"
 		}
 	]
 }
