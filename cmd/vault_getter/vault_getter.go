@@ -26,7 +26,6 @@ var (
 )
 
 func main() {
-
 	// parse command line arguments
 	// get vault values
 	// replace in files
@@ -40,6 +39,7 @@ func main() {
 	*/
 
 	vault := initClient()
+
 	// get secrets
 	decryptedSecrets, err := readSecrets(vault)
 
@@ -69,6 +69,8 @@ func main() {
 			break
 		}
 	}
+
+	defer logger.Sync()
 
 }
 
@@ -106,7 +108,6 @@ func initClient() *client.Vault {
 		*token = vaultToken
 	}
 
-	//logger.Info("vault token", zap.Object("token", *token))
 	vault.Client.SetToken(*token)
 
 	if vaultPath := os.Getenv("VAULT_PATH"); *path == "" {

@@ -35,8 +35,8 @@ func TestReplaceVars(t *testing.T) {
 	secrets[0] = "path_ORACLEHOST"
 	secrets[1] = "path_UNUSED_VARIABLE"
 
-	mockVault.On("List", mock.AnythingOfType("string")).Return(secrets)
-	mockVault.On("Read", mock.AnythingOfType("string")).Return("vault_localhost")
+	mockVault.On("List", mock.Anything).Return(secrets)
+	mockVault.On("Read", mock.Anything).Return("vault_localhost")
 
 	// test cases
 	testCases := []struct {
@@ -55,7 +55,10 @@ func TestReplaceVars(t *testing.T) {
 		*order = tc.order
 
 		// reset env variable
+		// current format
 		os.Setenv("ORACLEHOST", "env_localhost")
+		// legacy format
+		os.Setenv("path_ORACLEHOST", "env_localhost")
 
 		// reset file
 		ioutil.WriteFile(*files, []byte("${ORACLEHOST}"), os.ModePerm)
@@ -74,7 +77,15 @@ func TestReplaceVars(t *testing.T) {
 			strings.Compare(strings.TrimSpace(string(result)), tc.expectedFileValue) != 0 {
 			t.Errorf("In(%s) = file var: %s; expected file var: %s", tc.order, result, tc.expectedFileValue)
 		}
+
+		// normal format
 		env := os.Getenv("ORACLEHOST")
+		if strings.Compare(env, tc.expectedEnvValue) != 0 {
+			t.Errorf("In(%s) = env var: %s; expected env var: %s", tc.order, env, tc.expectedEnvValue)
+		}
+
+		// legacy format
+		env = os.Getenv("path_ORACLEHOST")
 		if strings.Compare(env, tc.expectedEnvValue) != 0 {
 			t.Errorf("In(%s) = env var: %s; expected env var: %s", tc.order, env, tc.expectedEnvValue)
 		}

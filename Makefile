@@ -19,7 +19,6 @@ clean:
 
 .PHONY: test
 test: .GOPATH/.ok
-	$Q go get -v -d ./...
 	$Q go vet $(allpackages)
 	$Q go test -race $(allpackages)
 
