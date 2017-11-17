@@ -164,11 +164,11 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			logger.Info("", zap.String("line", line))
-			//captures := make(map[string][])
+			logger.Debug("", zap.String("line", line))
+
 			match := exp.FindAllStringSubmatch(line, -1)
 			if match == nil || len(match) == 0 {
-				logger.Info("no matches found")
+				logger.Debug("no variables in line found matching pattern", zap.String("regex", exp.String()))
 				_writeline(writer, &line)
 				continue
 			}
@@ -198,7 +198,6 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 			}
 
 			_writeline(writer, &line)
-			logger.Info("lines", zap.String("", line))
 
 		}
 		writer.Flush()
