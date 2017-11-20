@@ -179,7 +179,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 					if name != "var" {
 						continue
 					}
-					logger.Info("", zap.String("name", name), zap.String("match", match[j][i]))
+					logger.Info("variable found in line", zap.String("match", match[j][i]))
 					// replace
 					variable := match[j][i]
 
@@ -192,7 +192,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 						line = strings.Replace(line, match[j][0], (*secrets)[variable], 1)
 
 					} else {
-						logger.Warn("unknown variable found", zap.String("variable", match[j][0]))
+						logger.Info("unknown key", zap.String("variable", match[j][0]))
 					}
 				}
 			}
@@ -255,7 +255,7 @@ func readSecrets(cli client.Client) (*map[string]string, error) {
 			key := key.(string)
 
 			value := cli.Read(*path + "/" + key)
-			logger.Info("", zap.String("key", key))
+			logger.Debug("", zap.String("key", key))
 
 			// HACK TODO: FIX THIS. This limits our secrets options to stack/stack_key
 			// If stack/stack_key exists, THEN split, and keep legacy and new format
@@ -267,7 +267,7 @@ func readSecrets(cli client.Client) (*map[string]string, error) {
 			if std := (strings.SplitN(key, "_", 2))[1]; std != "" {
 				std = strings.ToUpper(std)
 				secretsOut[std] = value
-				logger.Info("", zap.String("key", std))
+				logger.Debug("", zap.String("key", std))
 
 				// order=override will override environment variables with vault values
 				if _, ok := os.LookupEnv(std); *order == "override" && ok {
