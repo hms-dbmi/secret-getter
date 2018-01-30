@@ -17,10 +17,13 @@ build: .GOPATH/.ok
 clean:
 	$Q rm -rf .GOPATH/.ok .GOPATH bin/vault_getter bin vault-getter
 
-.PHONY: test
-test: .GOPATH/.ok
+.PHONY: test test-race
+# issue with golang & alpine (alpine uses musl library, not glibc)
+# race calls built on glibc libraries -Andre
+test-race: ARGS=-race
+test test-race: .GOPATH/.ok
 	$Q go vet $(allpackages)
-	$Q go test -race $(allpackages)
+	$Q go test $(ARGS) $(allpackages)
 
 .PHONY: list
 list: .GOPATH/.ok

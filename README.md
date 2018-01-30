@@ -46,3 +46,5 @@ vault_getter --path=/path/in/Vault/ --files=/path/to/file1,/path/to/file2 --pref
 ```
 
 This will replace keys, matching regex ${key}, found in /path/to/file1 and /path/to/file2 with values from Vault or the environment, with environment values having order of precedence
+
+_TODO: Abstract vault-getter client out to use any 3rd-party secret repository (secret-getter client)_
