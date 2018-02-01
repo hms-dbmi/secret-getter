@@ -1,4 +1,4 @@
-# vault-getter
+# secret-getter
 
 Replaces file and/or environment variables with retrieved vault secrets
 
@@ -42,9 +42,9 @@ VAULT_ADDR=locahost
 VAULT_TOKEN=000-000-0000
 VAULT_KEY_1=VALUE_2
 
-vault_getter --path=/path/in/Vault/ --files=/path/to/file1,/path/to/file2 --prefix=\$\{ --suffix=\} --order=env
+secret_getter vault --path=/path/in/Vault/ --files=/path/to/file1,/path/to/file2 --prefix=\$\{ --suffix=\} --order=env
 ```
 
 This will replace keys, matching regex ${key}, found in /path/to/file1 and /path/to/file2 with values from Vault or the environment, with environment values having order of precedence
 
-_TODO: Abstract vault-getter client out to use any 3rd-party secret repository (secret-getter client)_
+_TODO: Abstract vault-getter client out to use any 3rd-party secret repository (secret-getter client), e.g. secret-getter file --path=/path/to/file --key=private key, secret-getter keywhiz --series=secret series name --group=secrets by group_

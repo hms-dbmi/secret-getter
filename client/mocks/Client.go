@@ -24,9 +24,18 @@ func (_m *Client) List(path string) interface{} {
 	return r0
 }
 
-// NewClient provides a mock function with given fields:
-func (_m *Client) NewClient() {
-	_m.Called()
+// Name provides a mock function with given fields:
+func (_m *Client) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // Read provides a mock function with given fields: path

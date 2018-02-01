@@ -1,5 +1,7 @@
 /*
 
+$ secret-getter vault
+
 available environment variables:
 - VAULT_ADDR
 - VAULT_PATH
@@ -31,7 +33,7 @@ VAULT_ADDR=https://locahost
 VAULT_TOKEN=000-000-0000
 VAULT_KEY_1=VALUE_2
 
-vault_getter -path=/path/in/Vault/ -files=/path/to/file1,/path/to/file2 -prefix=\$\{ -suffix=\} -order=env
+secret_getter vault -path=/path/in/Vault/ -files=/path/to/file1,/path/to/file2 -prefix=\$\{ -suffix=\} -order=env
 
 This will replace keys, matching regex ${key}, found in /path/to/file1 and /path/to/file2
 with environment or Vault values, enviroment values having order of precedence

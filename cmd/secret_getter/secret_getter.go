@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -10,19 +11,20 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/hms-dbmi/vault-getter/client"
+	"github.com/hms-dbmi/secret-getter/client"
 	"go.uber.org/zap"
 )
 
 var (
-	addr      = flag.String("addr", "", "Vault address")
-	token     = flag.String("token", "", "Vault token")
-	path      = flag.String("path", "", "Vault path")
-	prefixes  = flag.String("prefix", "{", "Front prefix")
-	suffixes  = flag.String("suffix", "}", "End prefix")
-	files     = flag.String("files", "", "List of files to replace with Vault secrets")
-	order     = flag.String("order", "vault", "Order of precedence: vault, env, override")
-	logger, _ = zap.NewProduction()
+	vaultCommand = flag.NewFlagSet("vault", flag.ExitOnError)
+	addr         = vaultCommand.String("addr", "", "Vault address")
+	token        = vaultCommand.String("token", "", "Vault token")
+	path         = vaultCommand.String("path", "", "Vault path")
+	prefixes     = vaultCommand.String("prefix", "{", "Front prefix")
+	suffixes     = vaultCommand.String("suffix", "}", "End prefix")
+	files        = vaultCommand.String("files", "", "List of files to replace with Vault secrets")
+	order        = vaultCommand.String("order", "vault", "Order of precedence: vault, env, override")
+	logger, _    = zap.NewProduction()
 )
 
 func main() {
@@ -31,14 +33,34 @@ func main() {
 	// replace in files
 	// run main executable
 
-	flag.Parse()
+	if len(os.Args) < 2 {
+		fmt.Println("vault or file subcommand is required")
+		flag.Usage()
+		vaultCommand.Usage()
+		os.Exit(1)
+	}
+
+	var vault client.Client
+	var err error
+
+	switch os.Args[1] {
+	case "vault":
+		vaultCommand.Parse(os.Args[2:])
+		vault, err = client.CreateClient("vault", *vaultCommand)
+		if err != nil {
+			logger.Fatal("faled to initialize Vault client", zap.Error(err))
+		}
+	case "help":
+		vaultCommand.Usage()
+	default:
+		fmt.Println("vault or file subcommand is required")
+		os.Exit(1)
+	}
 
 	/*    if *version {
 	          fmt.Printf("Version: %s\n", Version)
 	      }
 	*/
-
-	vault := initClient()
 
 	// get secrets
 	decryptedSecrets, err := readSecrets(vault)
@@ -86,41 +108,6 @@ func execute(argv []string) error {
 }
 
 var execFunc = syscall.Exec
-
-func initClient() *client.Vault {
-
-	// specific environment variable. VAULT_ADDR, VAULT_TOKEN, VAULT_PATH
-	// Vault address
-	// Vault path
-	// Vault access token are encrypted variables
-	vault := &client.Vault{}
-	vault.NewClient()
-	//if err != nil {
-	//	logger.Fatal("faled to initialize Vault client", zap.Error(err))
-	//}
-
-	if vaultAddr := os.Getenv("VAULT_ADDR"); *addr == "" {
-		*addr = vaultAddr
-	}
-	vault.Client.SetAddress(*addr)
-
-	if vaultToken := os.Getenv("VAULT_TOKEN"); *token == "" {
-		*token = vaultToken
-	}
-
-	vault.Client.SetToken(*token)
-
-	if vaultPath := os.Getenv("VAULT_PATH"); *path == "" {
-		*path = vaultPath
-	}
-
-	if *path == "" {
-		logger.Fatal("Vault path must be defined")
-	}
-
-	return vault
-
-}
 
 func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 
@@ -243,6 +230,7 @@ func _writeline(writer *bufio.Writer, line *string) {
 	writer.WriteString(*line + "\n")
 }
 
+// TODO: load files first, then load values into cache from Vault per key found - Andre
 func readSecrets(cli client.Client) (*map[string]string, error) {
 
 	// return list of secret keys

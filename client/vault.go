@@ -11,19 +11,9 @@ type Vault struct {
 	logger *zap.Logger
 }
 
-// NewClient initialize Vault client
-func (v *Vault) NewClient() {
-	var err error
-	v.Client, err = api.NewClient(nil)
-	if err != nil {
-		v.logger.Fatal("failed to initialize Vault client", zap.Error(err))
-	}
-	v.logger, err = zap.NewProduction()
-	defer v.logger.Sync()
-	if err != nil {
-		v.logger.Fatal("failed to initialize client logger", zap.Error(err))
-	}
-
+// Name ... Type of client
+func (v *Vault) Name() string {
+	return "vault"
 }
 
 // List returns list of keys

@@ -1,5 +1,5 @@
 VERSION := ${shell cat ./VERSION}
-IMPORT_PATH := github.com/hms-dbmi/vault-getter
+IMPORT_PATH := github.com/hms-dbmi/secret-getter
 IGNORED_PACKAGES := /vendor/ # space separated patterns
 VERSION_FLAGS    := -ldflags='-X "main.Version=$(VERSION)"'
 
@@ -11,11 +11,11 @@ all: test build
 
 .PHONY: hello
 build: .GOPATH/.ok
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/vault_getter
+	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/secret_getter
 
 .PHONY: clean
 clean:
-	$Q rm -rf .GOPATH/.ok .GOPATH bin/vault_getter bin vault-getter
+	$Q rm -rf .GOPATH/.ok .GOPATH bin/vault_getter bin secret-getter
 
 .PHONY: test test-race
 # issue with golang & alpine (alpine uses musl library, not glibc)

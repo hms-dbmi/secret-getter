@@ -6,9 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hms-dbmi/vault-getter/client/mocks"
+	"github.com/hms-dbmi/secret-getter/client/mocks"
 	"github.com/stretchr/testify/mock"
 )
+
+// TODO: write more tests (not enough code coverage)
 
 func TestEnvVariables(t *testing.T) {
 
