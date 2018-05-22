@@ -27,9 +27,9 @@ func TestEnvVariables(t *testing.T) {
 func TestReplaceVars(t *testing.T) {
 
 	// config values
-	*prefixes = "\\${"
-	*suffixes = "}"
-	*files = "../../test_files/test.txt"
+	prefixes = "\\${"
+	suffixes = "}"
+	files = "../../test_files/test.txt"
 
 	// prep mock
 	mockVault := &mocks.Client{}
@@ -54,7 +54,7 @@ func TestReplaceVars(t *testing.T) {
 	for _, tc := range testCases {
 
 		// option
-		*order = tc.order
+		order = tc.order
 
 		// reset env variable
 		// current format
@@ -63,17 +63,17 @@ func TestReplaceVars(t *testing.T) {
 		os.Setenv("path_ORACLEHOST", "env_localhost")
 
 		// reset file
-		ioutil.WriteFile(*files, []byte("${ORACLEHOST}"), os.ModePerm)
+		ioutil.WriteFile(files, []byte("${ORACLEHOST}"), os.ModePerm)
 
 		// read secrets
 		decryptedsecrets, _ := readSecrets(mockVault)
 		// run method
-		loadFiles(strings.Split(*files, ","), decryptedsecrets, false)
+		loadFiles(strings.Split(files, ","), decryptedsecrets, false)
 
 		// check results
-		result, error := ioutil.ReadFile(*files)
+		result, error := ioutil.ReadFile(files)
 
-		defer os.Remove(*files)
+		defer os.Remove(files)
 
 		if error != nil ||
 			strings.Compare(strings.TrimSpace(string(result)), tc.expectedFileValue) != 0 {

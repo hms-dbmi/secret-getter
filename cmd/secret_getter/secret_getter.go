@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -12,19 +11,17 @@ import (
 	"syscall"
 
 	"github.com/hms-dbmi/secret-getter/client"
+	"github.com/hms-dbmi/secret-getter/util"
 	"go.uber.org/zap"
 )
 
 var (
-	vaultCommand = flag.NewFlagSet("vault", flag.ExitOnError)
-	addr         = vaultCommand.String("addr", "", "Vault address")
-	token        = vaultCommand.String("token", "", "Vault token")
-	path         = vaultCommand.String("path", "", "Vault path")
-	prefixes     = vaultCommand.String("prefix", "{", "Front prefix")
-	suffixes     = vaultCommand.String("suffix", "}", "End prefix")
-	files        = vaultCommand.String("files", "", "List of files to replace with Vault secrets")
-	order        = vaultCommand.String("order", "vault", "Order of precedence: vault, env, override")
-	logger, _    = zap.NewProduction()
+	logger, _ = zap.NewProduction()
+	files     string
+	suffixes  string
+	prefixes  string
+	order     string
+	path      string
 )
 
 func main() {
@@ -33,25 +30,51 @@ func main() {
 	// replace in files
 	// run main executable
 
-	if len(os.Args) < 2 {
-		fmt.Println("vault or file subcommand is required")
-		flag.Usage()
-		vaultCommand.Usage()
-		os.Exit(1)
-	}
-
-	var vault client.Client
 	var err error
+	var cli client.Client
+
+	var vaultCommand = flag.NewFlagSet("vault", flag.ExitOnError)
+	vaultCommand.String("addr", "", "Vault address")
+	vaultCommand.String("token", "", "Vault token")
+	vaultCommand.String("path", "", "Vault path")
+	vaultCommand.String("prefix", "{", "Front prefix")
+	vaultCommand.String("suffix", "}", "End prefix")
+	vaultCommand.String("files", "", "List of files to replace with Vault secrets")
+	vaultCommand.String("order", "vault", "Order of precedence: vault, env, override")
+
+	var fileCommand = flag.NewFlagSet("file", flag.ExitOnError)
+	fileCommand.String("path", "", "File path")
+	fileCommand.String("prefix", "{", "Front prefix")
+	fileCommand.String("suffix", "}", "End prefix")
+	fileCommand.String("files", "", "List of files to replace with Vault secrets")
+	fileCommand.String("order", "vault", "Order of precedence: vault, env, override")
 
 	switch os.Args[1] {
 	case "vault":
 		vaultCommand.Parse(os.Args[2:])
-		vault, err = client.CreateClient("vault", *vaultCommand)
+		path = vaultCommand.Lookup("path").Value.String()
+		files = vaultCommand.Lookup("files").Value.String()
+		prefixes = vaultCommand.Lookup("prefix").Value.String()
+		suffixes = vaultCommand.Lookup("suffix").Value.String()
+		order = vaultCommand.Lookup("order").Value.String()
+		cli, err = client.CreateClient("vault", *vaultCommand)
 		if err != nil {
 			logger.Fatal("faled to initialize Vault client", zap.Error(err))
 		}
+	case "file":
+		fileCommand.Parse(os.Args[2:])
+		path = fileCommand.Lookup("path").Value.String()
+		files = fileCommand.Lookup("files").Value.String()
+		prefixes = fileCommand.Lookup("prefix").Value.String()
+		suffixes = fileCommand.Lookup("suffix").Value.String()
+		order = fileCommand.Lookup("order").Value.String()
+		cli, err = client.CreateClient("file", *fileCommand)
+		if err != nil {
+			logger.Fatal("faled to initialize file client", zap.Error(err))
+		}
 	case "help":
 		vaultCommand.Usage()
+		fileCommand.Usage()
 	default:
 		fmt.Println("vault or file subcommand is required")
 		os.Exit(1)
@@ -63,11 +86,11 @@ func main() {
 	*/
 
 	// get secrets
-	decryptedSecrets, err := readSecrets(vault)
+	decryptedSecrets, err := readSecrets(cli)
 
 	// variable replacement
 	if err == nil {
-		loadFiles(strings.Split(*files, ","), decryptedSecrets, false)
+		loadFiles(strings.Split(files, ","), decryptedSecrets, false)
 	}
 	// run next command
 
@@ -115,7 +138,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 	// for now, expect delimited strings, e.g. \\$ must be defined by user,
 	// should make sure to delimit all regex characters to prevent parsing fubar
 
-	exp := regexp.MustCompile(*prefixes + "(?P<var>[^" + *suffixes + "]*)" + *suffixes)
+	exp := regexp.MustCompile(prefixes + "(?P<var>[^" + suffixes + "]*)" + suffixes)
 	logger.Info("Searching for match.", zap.String("expression", exp.String()))
 	for _, file := range files {
 
@@ -126,12 +149,13 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 		}
 
 		// if this is a directory, load those files, then move through to next element
-		if _isDirectory(info) {
+		if util.IsDirectory(info) {
 			// prevent recursive (symlinks) and/or deep file loading.
 			// sub dirctories need to be explicitly be in the files list
 			// e.g. -files=/path/to/dir,/path/to/dir/subdir,
 			if !skipDir {
-				loadFiles(_getDirectoryFiles(file), secrets, true)
+				directoryFiles, _ := util.GetDirectoryFiles(file)
+				loadFiles(directoryFiles, secrets, true)
 			}
 			continue
 		}
@@ -156,7 +180,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 			match := exp.FindAllStringSubmatch(line, -1)
 			if match == nil || len(match) == 0 {
 				logger.Debug("no variables in line found matching pattern", zap.String("regex", exp.String()))
-				_writeline(writer, &line)
+				util.WriteLine(writer, &line)
 				continue
 			}
 
@@ -172,7 +196,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 
 					if (*secrets)[variable] != "" {
 						// order==env will use environment variable non-empty value instead of vault value
-						if *order == "env" && os.Getenv(variable) != "" {
+						if order == "env" && os.Getenv(variable) != "" {
 							(*secrets)[variable] = os.Getenv(variable)
 						}
 
@@ -184,7 +208,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 				}
 			}
 
-			_writeline(writer, &line)
+			util.WriteLine(writer, &line)
 
 		}
 		writer.Flush()
@@ -194,47 +218,11 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 	}
 }
 
-func _isDirectory(info os.FileInfo) bool {
-	// if this file is a directory,
-	// get files from directory, and append to files Object
-	switch mode := info.Mode(); {
-	case mode.IsDir():
-		logger.Info(info.Name() + " is a directory.")
-		return true
-	}
-	return false
-}
-
-func _getDirectoryFiles(path string) []string {
-	dirfiles, err := ioutil.ReadDir(path)
-	if err != nil {
-		logger.Fatal("Could not read directory", zap.Error(err))
-	}
-
-	var files []string
-	for _, dirfile := range dirfiles {
-		logger.Info("appending ", zap.String("file", path+"/"+dirfile.Name()))
-		files = append(files, path+"/"+dirfile.Name())
-	}
-	return files
-}
-
-func _writeline(writer *bufio.Writer, line *string) {
-	if line == nil {
-		return
-	}
-	//logger.Info("buffer remaining", zap.Object("buffer", writer.Available()))
-	if writer.Available()-len(*line) < 0 {
-		writer.Flush()
-	}
-	writer.WriteString(*line + "\n")
-}
-
 // TODO: load files first, then load values into cache from Vault per key found - Andre
 func readSecrets(cli client.Client) (*map[string]string, error) {
 
 	// return list of secret keys
-	secrets := cli.List(*path)
+	secrets := cli.List(path)
 	// get secret values
 	secretsOut := make(map[string]string)
 	if keys, ok := secrets.([]interface{}); ok {
@@ -242,7 +230,7 @@ func readSecrets(cli client.Client) (*map[string]string, error) {
 
 			key := key.(string)
 
-			value := cli.Read(*path + "/" + key)
+			value := cli.Read(path + "/" + key)
 			logger.Debug("", zap.String("key", key))
 
 			// HACK TODO: FIX THIS. This limits our secrets options to stack/stack_key
@@ -258,7 +246,7 @@ func readSecrets(cli client.Client) (*map[string]string, error) {
 				logger.Debug("", zap.String("key", std))
 
 				// order=override will override environment variables with vault values
-				if _, ok := os.LookupEnv(std); *order == "override" && ok {
+				if _, ok := os.LookupEnv(std); order == "override" && ok {
 					// note parent process env variables is not being updated
 					// requires syscall
 					os.Setenv(std, secretsOut[std])
@@ -268,7 +256,7 @@ func readSecrets(cli client.Client) (*map[string]string, error) {
 			// legacy format
 			secretsOut[key] = value
 			// order=override will override environment variables with vault values
-			if _, ok := os.LookupEnv(key); *order == "override" && ok {
+			if _, ok := os.LookupEnv(key); order == "override" && ok {
 				os.Setenv(key, secretsOut[key])
 			}
 		}
