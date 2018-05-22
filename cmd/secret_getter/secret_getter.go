@@ -139,7 +139,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 	// should make sure to delimit all regex characters to prevent parsing fubar
 
 	exp := regexp.MustCompile(prefixes + "(?P<var>[^" + suffixes + "]*)" + suffixes)
-	logger.Info("Searching for match.", zap.String("expression", exp.String()))
+	logger.Debug("Searching for match.", zap.String("expression", exp.String()))
 	for _, file := range files {
 
 		// keep permissions the same
@@ -190,7 +190,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 					if name != "var" {
 						continue
 					}
-					logger.Info("variable found in line", zap.String("match", match[j][i]))
+					logger.Debug("variable found in line", zap.String("match", match[j][i]))
 					// replace
 					variable := match[j][i]
 
@@ -203,7 +203,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 						line = strings.Replace(line, match[j][0], (*secrets)[variable], 1)
 
 					} else {
-						logger.Info("unknown key", zap.String("variable", match[j][0]))
+						logger.Debug("unknown key", zap.String("variable", match[j][0]))
 					}
 				}
 			}
