@@ -23,13 +23,10 @@
 
 [[constraint]]
   name = "github.com/hashicorp/vault"
-  version = "v0.6.5"
+  version = "v0.8.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
 
 [[constraint]]
   name = "go.uber.org/zap"
-
-[[constraint]]
-  name = "github.com/jcmturner/vaultmock"

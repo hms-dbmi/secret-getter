@@ -8,9 +8,11 @@ import (
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/vault/audit"
+	"github.com/hashicorp/vault/helper/consts"
 	"github.com/hashicorp/vault/helper/logformat"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/physical"
+	"github.com/hashicorp/vault/physical/inmem"
 	log "github.com/mgutz/logxi/v1"
 )
 
@@ -22,12 +24,17 @@ var (
 func TestNewCore_badRedirectAddr(t *testing.T) {
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
+	inm, err := inmem.NewInmem(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	conf := &CoreConfig{
 		RedirectAddr: "127.0.0.1:8200",
-		Physical:     physical.NewInmem(logger),
+		Physical:     inm,
 		DisableMlock: true,
 	}
-	_, err := NewCore(conf)
+	_, err = NewCore(conf)
 	if err == nil {
 		t.Fatal("should error")
 	}
@@ -198,7 +205,7 @@ func TestCore_Route_Sealed(t *testing.T) {
 		Path:      "sys/mounts",
 	}
 	_, err := c.HandleRequest(req)
-	if err != ErrSealed {
+	if err != consts.ErrSealed {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -973,12 +980,19 @@ func TestCore_Standby_Seal(t *testing.T) {
 	// Create the first core and initialize it
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
-	inm := physical.NewInmem(logger)
-	inmha := physical.NewInmemHA(logger)
+	inm, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	redirectOriginal := "http://127.0.0.1:8200"
 	core, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal,
 		DisableMlock: true,
 	})
@@ -1005,7 +1019,7 @@ func TestCore_Standby_Seal(t *testing.T) {
 	TestWaitActive(t, core)
 
 	// Check the leader is local
-	isLeader, advertise, err := core.Leader()
+	isLeader, advertise, _, err := core.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1013,14 +1027,14 @@ func TestCore_Standby_Seal(t *testing.T) {
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Create the second core and initialize it
 	redirectOriginal2 := "http://127.0.0.1:8500"
 	core2, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal2,
 		DisableMlock: true,
 	})
@@ -1052,7 +1066,7 @@ func TestCore_Standby_Seal(t *testing.T) {
 	}
 
 	// Check the leader is not local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1060,7 +1074,7 @@ func TestCore_Standby_Seal(t *testing.T) {
 		t.Fatalf("should not be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Seal the standby core with the correct token. Shouldn't go down
@@ -1084,12 +1098,19 @@ func TestCore_StepDown(t *testing.T) {
 	// Create the first core and initialize it
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
-	inm := physical.NewInmem(logger)
-	inmha := physical.NewInmemHA(logger)
+	inm, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	redirectOriginal := "http://127.0.0.1:8200"
 	core, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal,
 		DisableMlock: true,
 	})
@@ -1116,7 +1137,7 @@ func TestCore_StepDown(t *testing.T) {
 	TestWaitActive(t, core)
 
 	// Check the leader is local
-	isLeader, advertise, err := core.Leader()
+	isLeader, advertise, _, err := core.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1124,14 +1145,14 @@ func TestCore_StepDown(t *testing.T) {
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Create the second core and initialize it
 	redirectOriginal2 := "http://127.0.0.1:8500"
 	core2, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal2,
 		DisableMlock: true,
 	})
@@ -1163,7 +1184,7 @@ func TestCore_StepDown(t *testing.T) {
 	}
 
 	// Check the leader is not local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1171,7 +1192,7 @@ func TestCore_StepDown(t *testing.T) {
 		t.Fatalf("should not be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	req := &logical.Request{
@@ -1204,7 +1225,7 @@ func TestCore_StepDown(t *testing.T) {
 	}
 
 	// Check the leader is core2
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1212,11 +1233,11 @@ func TestCore_StepDown(t *testing.T) {
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal2 {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal2)
 	}
 
 	// Check the leader is not local
-	isLeader, advertise, err = core.Leader()
+	isLeader, advertise, _, err = core.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1224,7 +1245,7 @@ func TestCore_StepDown(t *testing.T) {
 		t.Fatalf("should not be leader")
 	}
 	if advertise != redirectOriginal2 {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal2)
 	}
 
 	// Step down core2
@@ -1247,7 +1268,7 @@ func TestCore_StepDown(t *testing.T) {
 	}
 
 	// Check the leader is core1
-	isLeader, advertise, err = core.Leader()
+	isLeader, advertise, _, err = core.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1255,11 +1276,11 @@ func TestCore_StepDown(t *testing.T) {
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Check the leader is not local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1267,7 +1288,7 @@ func TestCore_StepDown(t *testing.T) {
 		t.Fatalf("should not be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 }
 
@@ -1275,12 +1296,19 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 	// Create the first core and initialize it
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
-	inm := physical.NewInmem(logger)
-	inmha := physical.NewInmemHA(logger)
+	inm, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	redirectOriginal := "http://127.0.0.1:8200"
 	core, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal,
 		DisableMlock: true,
 	})
@@ -1334,7 +1362,7 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 	}
 
 	// Check the leader is local
-	isLeader, advertise, err := core.Leader()
+	isLeader, advertise, _, err := core.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1342,14 +1370,14 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Create a second core, attached to same in-memory store
 	redirectOriginal2 := "http://127.0.0.1:8500"
 	core2, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal2,
 		DisableMlock: true,
 	})
@@ -1381,7 +1409,7 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 	}
 
 	// Check the leader is not local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1389,7 +1417,7 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 		t.Fatalf("should not be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Seal the first core, should step down
@@ -1411,7 +1439,7 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 	TestWaitActive(t, core2)
 
 	// Check the leader is local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1419,7 +1447,7 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal2 {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal2)
 	}
 
 	// Give time for the entries to clear out; it is conservative at 1/second
@@ -1437,14 +1465,27 @@ func TestCore_CleanLeaderPrefix(t *testing.T) {
 func TestCore_Standby(t *testing.T) {
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
-	inmha := physical.NewInmemHA(logger)
-	testCore_Standby_Common(t, inmha, inmha)
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCore_Standby_Common(t, inmha, inmha.(physical.HABackend))
 }
 
 func TestCore_Standby_SeparateHA(t *testing.T) {
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
-	testCore_Standby_Common(t, physical.NewInmemHA(logger), physical.NewInmemHA(logger))
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inmha2, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCore_Standby_Common(t, inmha, inmha2.(physical.HABackend))
 }
 
 func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.HABackend) {
@@ -1493,7 +1534,7 @@ func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.
 	}
 
 	// Check the leader is local
-	isLeader, advertise, err := core.Leader()
+	isLeader, advertise, _, err := core.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1501,7 +1542,7 @@ func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Create a second core, attached to same in-memory store
@@ -1541,12 +1582,12 @@ func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.
 
 	// Request should fail in standby mode
 	_, err = core2.HandleRequest(req)
-	if err != ErrStandby {
+	if err != consts.ErrStandby {
 		t.Fatalf("err: %v", err)
 	}
 
 	// Check the leader is not local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1554,7 +1595,7 @@ func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.
 		t.Fatalf("should not be leader")
 	}
 	if advertise != redirectOriginal {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal)
 	}
 
 	// Seal the first core, should step down
@@ -1592,7 +1633,7 @@ func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.
 	}
 
 	// Check the leader is local
-	isLeader, advertise, err = core2.Leader()
+	isLeader, advertise, _, err = core2.Leader()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1600,21 +1641,21 @@ func testCore_Standby_Common(t *testing.T, inm physical.Backend, inmha physical.
 		t.Fatalf("should be leader")
 	}
 	if advertise != redirectOriginal2 {
-		t.Fatalf("Bad advertise: %v", advertise)
+		t.Fatalf("Bad advertise: %v, orig is %v", advertise, redirectOriginal2)
 	}
 
-	if inm.(*physical.InmemHABackend) == inmha.(*physical.InmemHABackend) {
-		lockSize := inm.(*physical.InmemHABackend).LockMapSize()
+	if inm.(*inmem.InmemHABackend) == inmha.(*inmem.InmemHABackend) {
+		lockSize := inm.(*inmem.InmemHABackend).LockMapSize()
 		if lockSize == 0 {
 			t.Fatalf("locks not used with only one HA backend")
 		}
 	} else {
-		lockSize := inmha.(*physical.InmemHABackend).LockMapSize()
+		lockSize := inmha.(*inmem.InmemHABackend).LockMapSize()
 		if lockSize == 0 {
 			t.Fatalf("locks not used with expected HA backend")
 		}
 
-		lockSize = inm.(*physical.InmemHABackend).LockMapSize()
+		lockSize = inm.(*inmem.InmemHABackend).LockMapSize()
 		if lockSize != 0 {
 			t.Fatalf("locks used with unexpected HA backend")
 		}
@@ -1792,6 +1833,19 @@ func TestCore_RenewSameLease(t *testing.T) {
 	if resp.Secret.LeaseID != original {
 		t.Fatalf("lease id changed: %s %s", original, resp.Secret.LeaseID)
 	}
+
+	// Renew the lease (alternate path)
+	req = logical.TestRequest(t, logical.UpdateOperation, "sys/leases/renew/"+resp.Secret.LeaseID)
+	req.ClientToken = root
+	resp, err = c.HandleRequest(req)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Verify the lease did not change
+	if resp.Secret.LeaseID != original {
+		t.Fatalf("lease id changed: %s %s", original, resp.Secret.LeaseID)
+	}
 }
 
 // Renew of a token should not create a new lease
@@ -1936,7 +1990,7 @@ path "secret/*" {
 	}
 
 	// Renew the lease
-	req = logical.TestRequest(t, logical.UpdateOperation, "sys/renew")
+	req = logical.TestRequest(t, logical.UpdateOperation, "sys/leases/renew")
 	req.Data = map[string]interface{}{
 		"lease_id": resp.Secret.LeaseID,
 	}
@@ -1955,7 +2009,7 @@ path "secret/*" {
 	}
 }
 
-func TestCore_HandleRequest_MountPoint(t *testing.T) {
+func TestCore_HandleRequest_MountPointType(t *testing.T) {
 	noop := &NoopBackend{
 		Response: &logical.Response{},
 	}
@@ -1985,11 +2039,14 @@ func TestCore_HandleRequest_MountPoint(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	// Verify Path and MountPoint
+	// Verify Path, MountPoint, and MountType
 	if noop.Requests[0].Path != "test" {
 		t.Fatalf("bad: %#v", noop.Requests)
 	}
 	if noop.Requests[0].MountPoint != "foo/" {
+		t.Fatalf("bad: %#v", noop.Requests)
+	}
+	if noop.Requests[0].MountType != "noop" {
 		t.Fatalf("bad: %#v", noop.Requests)
 	}
 }
@@ -1998,12 +2055,19 @@ func TestCore_Standby_Rotate(t *testing.T) {
 	// Create the first core and initialize it
 	logger = logformat.NewVaultLogger(log.LevelTrace)
 
-	inm := physical.NewInmem(logger)
-	inmha := physical.NewInmemHA(logger)
+	inm, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	redirectOriginal := "http://127.0.0.1:8200"
 	core, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal,
 		DisableMlock: true,
 	})
@@ -2024,7 +2088,7 @@ func TestCore_Standby_Rotate(t *testing.T) {
 	redirectOriginal2 := "http://127.0.0.1:8500"
 	core2, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal2,
 		DisableMlock: true,
 	})

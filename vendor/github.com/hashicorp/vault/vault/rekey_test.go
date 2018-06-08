@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/vault/helper/logformat"
 	"github.com/hashicorp/vault/physical"
+	"github.com/hashicorp/vault/physical/inmem"
 )
 
 func TestCore_Rekey_Lifecycle(t *testing.T) {
@@ -237,7 +238,7 @@ func testCore_Rekey_Update_Common(t *testing.T, c *Core, keys [][]byte, root str
 			t.Fatalf("err: %v", err)
 		}
 		for i := 0; i < 3; i++ {
-			_, err = TestCoreUnseal(c, result.SecretShares[i])
+			_, err = TestCoreUnseal(c, TestKeyCopy(result.SecretShares[i]))
 			if err != nil {
 				t.Fatalf("err: %v", err)
 			}
@@ -270,7 +271,7 @@ func testCore_Rekey_Update_Common(t *testing.T, c *Core, keys [][]byte, root str
 	// Provide the parts master
 	oldResult := result
 	for i := 0; i < 3; i++ {
-		result, err = c.RekeyUpdate(oldResult.SecretShares[i], rkconf.Nonce, recovery)
+		result, err = c.RekeyUpdate(TestKeyCopy(oldResult.SecretShares[i]), rkconf.Nonce, recovery)
 		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
@@ -372,12 +373,19 @@ func TestCore_Standby_Rekey(t *testing.T) {
 	// Create the first core and initialize it
 	logger := logformat.NewVaultLogger(log.LevelTrace)
 
-	inm := physical.NewInmem(logger)
-	inmha := physical.NewInmemHA(logger)
+	inm, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inmha, err := inmem.NewInmemHA(nil, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	redirectOriginal := "http://127.0.0.1:8200"
 	core, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal,
 		DisableMlock: true,
 		DisableCache: true,
@@ -399,7 +407,7 @@ func TestCore_Standby_Rekey(t *testing.T) {
 	redirectOriginal2 := "http://127.0.0.1:8500"
 	core2, err := NewCore(&CoreConfig{
 		Physical:     inm,
-		HAPhysical:   inmha,
+		HAPhysical:   inmha.(physical.HABackend),
 		RedirectAddr: redirectOriginal2,
 		DisableMlock: true,
 		DisableCache: true,

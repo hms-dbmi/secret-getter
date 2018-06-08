@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/hashicorp/vault/meta"
+	"github.com/hashicorp/vault/physical"
 	"github.com/mitchellh/cli"
+
+	physConsul "github.com/hashicorp/vault/physical/consul"
 )
 
 // The following tests have a go-metrics/exp manager race condition
@@ -18,6 +21,9 @@ func TestServer_CommonHA(t *testing.T) {
 	c := &ServerCommand{
 		Meta: meta.Meta{
 			Ui: ui,
+		},
+		PhysicalBackends: map[string]physical.Factory{
+			"consul": physConsul.NewConsulBackend,
 		},
 	}
 
@@ -33,7 +39,7 @@ func TestServer_CommonHA(t *testing.T) {
 	args := []string{"-config", tmpfile.Name(), "-verify-only", "true"}
 
 	if code := c.Run(args); code != 0 {
-		t.Fatalf("bad: %d\n\n%s", code, ui.ErrorWriter.String())
+		t.Fatalf("bad: %d\n\n%s\n\n%s", code, ui.ErrorWriter.String(), ui.OutputWriter.String())
 	}
 
 	if !strings.Contains(ui.OutputWriter.String(), "(HA available)") {
@@ -46,6 +52,9 @@ func TestServer_GoodSeparateHA(t *testing.T) {
 	c := &ServerCommand{
 		Meta: meta.Meta{
 			Ui: ui,
+		},
+		PhysicalBackends: map[string]physical.Factory{
+			"consul": physConsul.NewConsulBackend,
 		},
 	}
 
@@ -61,11 +70,11 @@ func TestServer_GoodSeparateHA(t *testing.T) {
 	args := []string{"-config", tmpfile.Name(), "-verify-only", "true"}
 
 	if code := c.Run(args); code != 0 {
-		t.Fatalf("bad: %d\n\n%s", code, ui.ErrorWriter.String())
+		t.Fatalf("bad: %d\n\n%s\n\n%s", code, ui.ErrorWriter.String(), ui.OutputWriter.String())
 	}
 
-	if !strings.Contains(ui.OutputWriter.String(), "HA Backend:") {
-		t.Fatalf("did not find HA Backend: %s", ui.OutputWriter.String())
+	if !strings.Contains(ui.OutputWriter.String(), "HA Storage:") {
+		t.Fatalf("did not find HA Storage: %s", ui.OutputWriter.String())
 	}
 }
 
@@ -74,6 +83,9 @@ func TestServer_BadSeparateHA(t *testing.T) {
 	c := &ServerCommand{
 		Meta: meta.Meta{
 			Ui: ui,
+		},
+		PhysicalBackends: map[string]physical.Factory{
+			"consul": physConsul.NewConsulBackend,
 		},
 	}
 

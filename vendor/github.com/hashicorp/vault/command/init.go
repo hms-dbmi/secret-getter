@@ -11,7 +11,8 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/helper/pgpkeys"
 	"github.com/hashicorp/vault/meta"
-	"github.com/hashicorp/vault/physical"
+	"github.com/hashicorp/vault/physical/consul"
+	"github.com/posener/complete"
 )
 
 // InitCommand is a Command that initializes a new Vault server.
@@ -36,7 +37,7 @@ func (c *InitCommand) Run(args []string) int {
 	flags.Var(&recoveryPgpKeys, "recovery-pgp-keys", "")
 	flags.BoolVar(&check, "check", false, "")
 	flags.BoolVar(&auto, "auto", false, "")
-	flags.StringVar(&consulServiceName, "consul-service", physical.DefaultServiceName, "")
+	flags.StringVar(&consulServiceName, "consul-service", consul.DefaultServiceName, "")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
@@ -245,11 +246,11 @@ func (c *InitCommand) runInit(check bool, initRequest *api.InitRequest) int {
 		c.Ui.Output(fmt.Sprintf(
 			"\n"+
 				"Vault initialized with %d keys and a key threshold of %d. Please\n"+
-				"securely distribute the above keys. When the Vault is re-sealed,\n"+
+				"securely distribute the above keys. When the vault is re-sealed,\n"+
 				"restarted, or stopped, you must provide at least %d of these keys\n"+
 				"to unseal it again.\n\n"+
 				"Vault does not store the master key. Without at least %d keys,\n"+
-				"your Vault will remain permanently sealed.",
+				"your vault will remain permanently sealed.",
 			initRequest.SecretShares,
 			initRequest.SecretThreshold,
 			initRequest.SecretThreshold,
@@ -301,10 +302,10 @@ Usage: vault init [options]
   Initialize a new Vault server.
 
   This command connects to a Vault server and initializes it for the
-  first time. This sets up the initial set of master keys and sets up the
+  first time. This sets up the initial set of master keys and the
   backend data store structure.
 
-  This command can't be called on an already-initialized Vault.
+  This command can't be called on an already-initialized Vault server.
 
 General Options:
 ` + meta.GeneralOptionsUsage() + `
@@ -383,4 +384,23 @@ Init Options:
                             "service" option for the Consul backend.
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *InitCommand) AutocompleteArgs() complete.Predictor {
+	return complete.PredictNothing
+}
+
+func (c *InitCommand) AutocompleteFlags() complete.Flags {
+	return complete.Flags{
+		"-check":              complete.PredictNothing,
+		"-key-shares":         complete.PredictNothing,
+		"-key-threshold":      complete.PredictNothing,
+		"-pgp-keys":           complete.PredictNothing,
+		"-root-token-pgp-key": complete.PredictNothing,
+		"-recovery-shares":    complete.PredictNothing,
+		"-recovery-threshold": complete.PredictNothing,
+		"-recovery-pgp-keys":  complete.PredictNothing,
+		"-auto":               complete.PredictNothing,
+		"-consul-service":     complete.PredictNothing,
+	}
 }

@@ -80,8 +80,7 @@ sending a SIGHUP to the server process. These are denoted below.
 
 * `ui` (optional, Vault Enterprise only) - If set `true`, enables the built-in
   web-based UI. Once enabled, the UI will be available to browsers at the
-  standard Vault address. This can also be set via the `VAULT_UI`
-  environment variable, which takes precedence.
+  standard Vault address.
 
 In production it is a risk to run Vault on systems where `mlock` is
 unavailable or the setting has been disabled via the `disable_mlock`.
@@ -136,16 +135,6 @@ The supported options are:
       or "tls12". This defaults to "tls12". WARNING: TLS 1.1 and lower
       are generally considered less secure; avoid using these if
       possible.
-
-  * `tls_cipher_suites` (optional) - The list of supported ciphersuites
-      separated with comma. The list of all available ciphersuites you can find
-      [here](https://golang.org/src/crypto/tls/cipher_suites.go).
-
-  * `tls_prefer_server_cipher_suites` (optional) - Controls whether the server
-      selects client's most preferred ciphersuite, or the server's most
-      preferred ciphersuite. If true then the server's preference, as expressed
-      in the order of elements in `tls_cipher_suites`, is used. This defaults to
-      "false" (client's preference).
 
 ### Connecting to Vault Enterprise in HashiCorp Atlas
 
@@ -277,6 +266,9 @@ to help you, but may refer you to the backend author.
   * `postgresql` - Store data within PostgreSQL. This backend does not support HA. This
     is a community-supported backend.
 
+  * `cassandra` – Store data within Cassandra. This backend does not support HA. This
+    is a community-supported backend.
+
   * `inmem` - Store data in-memory. This is only really useful for
     development and experimentation. Data is lost whenever Vault is
     restarted.
@@ -340,11 +332,6 @@ For Consul, the following options are supported:
   * `tls_min_version` (optional) - Minimum TLS version to use. Accepted values
     are 'tls10', 'tls11' or 'tls12'. Defaults to 'tls12'.
 
-  * `consistency_mode` (optional) - This option configures the consistency mode
-    used with Consul get requests. See [consistency
-    modes](https://www.consul.io/docs/agent/http.html#consistency-modes) in Consul
-    for tradeoffs. It can be set to "default" or "strong". Defaults to "default".
-
 The following settings should be set according to your [Consul encryption
 settings](https://www.consul.io/docs/agent/encryption.html):
 
@@ -379,7 +366,7 @@ backend "consul" {
   scheme = "http"
 
   // token is a Consul ACL Token that has write privileges to the path
-  // specified below.  Use of a Consul ACL Token is a best practice.
+  // specified below.  Use of a Consul ACL Token is a best pracitce.
   token = "[redacted]" // Vault's Consul ACL Token
 
   // path must be writable by the Consul ACL Token
@@ -446,15 +433,6 @@ Unseal Progress: 0
 
 #### Backend Reference: etcd (Community-Supported)
 
-The etcd physical backend supports both v2 and v3 APIs. To explicitly specify
-the API version, use the `etcd_api` configuration parameter. The default
-version is auto-detected based on the version of the etcd cluster. If the
-cluster version is 3.1+ and there has been no data written using the v2 API,
-the auto-detected default is v3.
-
-The v2 API has known issues with HA support and should not be used in HA
-scenarios.
-
 For etcd, the following options are supported:
 
   * `path` (optional) - The path within etcd where data will be stored.
@@ -464,9 +442,6 @@ For etcd, the following options are supported:
     Can be comma separated list (protocol://host:port) of many etcd instances.
     Defaults to "http://localhost:2379" if not specified. May also be specified
     via the ETCD_ADDR environment variable.
-
-  * `etcd_api` (optional) - Set to `"v2"` or `"v3"` to explicitly set the API
-    version that the backend will use.
 
   * `sync` (optional) - Should we synchronize the list of available etcd
     servers on startup?  This is a **string** value to allow for auto-sync to
@@ -766,6 +741,70 @@ LANGUAGE plpgsql;
 ```
 
 More info can be found in the [PostgreSQL documentation](http://www.postgresql.org/docs/9.4/static/plpgsql-control-structures.html#PLPGSQL-UPSERT-EXAMPLE):
+
+#### Backend Reference: Cassandra (Community-Supported)
+
+The Cassandra backend has the following options:
+
+  * `hosts` (optional) – Comma-separated list of Cassandra hosts to connect to.
+    Defaults to `"127.0.0.1"`.
+
+  * `keyspace` (optional) – Cassandra keyspace to use. Defaults to `"vault"`.
+
+  * `table` (optional) – Table within the `keyspace` in which to store data.
+    Defaults to `"entries"`.
+
+  * `consistency` (optional) – Consistency level to use when reading/writing data
+    in Cassandra. If set, must be one of `"ANY"`, `"ONE"`, `"TWO"`, `"THREE"`, `"QUORUM"`,
+    `"ALL"`, `"LOCAL_QUORUM"`, `"EACH_QUORUM"`, or `"LOCAL_ONE"`. Defaults to `"LOCAL_QUORUM"`.
+
+  * `protocol_version` (optional) - Cassandra protocol version to use. Defaults
+    to `2`.
+
+  * `username` (optional) - Username to use when authenticating with the
+    Cassandra hosts.
+
+  * `password` (optional) - Password to use when authenticating with the
+    Cassandra hosts.
+
+  * `connection_timeout` (optional) - A timeout in seconds to wait until a
+    connection is established with the Cassandra hosts.
+
+  * `tls` (optional) - Indicates the connection with the Cassandra hosts should
+    use TLS.
+
+  * `pem_bundle_file` (optional) - Specifies a file containing a
+    certificate and private key; a certificate, private key, and issuing CA
+    certificate; or just a CA certificate.
+
+  * `pem_json_file` (optional) - Specifies a JSON file containing a certificate
+    and private key; a certificate, private key, and issuing CA certificate;
+    or just a CA certificate.
+
+  * `tls_skip_verify` (optional) - If set, then TLS host verification
+    will be disabled for Cassandra.  Defaults to `0`.
+
+  * `tls_min_version` (optional) - Minimum TLS version to use. Accepted values
+    are `tls10`, `tls11` or `tls12`. Defaults to `tls12`.
+
+You need to ensure the keyspace and table exist in Cassandra:
+
+```cql
+CREATE KEYSPACE "vault" WITH REPLICATION = {
+    'class' : 'SimpleStrategy',
+    'replication_factor' : 1
+};
+
+CREATE TABLE "vault"."entries" (
+    bucket text,
+    key text,
+    value blob,
+    PRIMARY KEY (bucket, key)
+) WITH CLUSTERING ORDER BY (key ASC);
+
+```
+
+_Note:_ Keyspace replication options should be [customised](http://docs.datastax.com/en/cql/3.1/cql/cql_reference/create_keyspace_r.html#reference_ds_ask_vyj_xj__description) appropriately for your environment.
 
 #### Backend Reference: Inmem
 

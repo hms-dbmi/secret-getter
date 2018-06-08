@@ -37,7 +37,7 @@ func pathUsers(b *backend) *framework.Path {
 			},
 
 			"policies": &framework.FieldSchema{
-				Type:        framework.TypeString,
+				Type:        framework.TypeCommaStringSlice,
 				Description: "Comma-separated list of policies associated with the user.",
 			},
 		},
@@ -93,7 +93,7 @@ func (b *backend) pathUserRead(
 	return &logical.Response{
 		Data: map[string]interface{}{
 			"groups":   strings.Join(user.Groups, ","),
-			"policies": strings.Join(user.Policies, ","),
+			"policies": user.Policies,
 		},
 	}, nil
 }
@@ -101,8 +101,8 @@ func (b *backend) pathUserRead(
 func (b *backend) pathUserWrite(
 	req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
 	name := d.Get("name").(string)
-	groups := strutil.ParseDedupAndSortStrings(d.Get("groups").(string), ",")
-	policies := policyutil.ParsePolicies(d.Get("policies").(string))
+	groups := strutil.RemoveDuplicates(strutil.ParseStringSlice(d.Get("groups").(string), ","), false)
+	policies := policyutil.ParsePolicies(d.Get("policies"))
 	for i, g := range groups {
 		groups[i] = strings.TrimSpace(g)
 	}

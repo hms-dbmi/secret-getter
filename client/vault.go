@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/hms-dbmi/secret-getter/util"
@@ -61,7 +62,7 @@ func NewVaultClient(conf flag.FlagSet) (Client, error) {
 
 		// only set non-empty token
 		if len(data) > 0 {
-			vaultClient.SetToken(string(data))
+			vaultClient.SetToken(strings.TrimSpace(string(data)))
 		}
 	} else if token != "" {
 		vaultClient.SetToken(token)
