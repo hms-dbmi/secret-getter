@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"errors"
 	"flag"
-	"github.com/hms-dbmi/secret-getter/util"
-	"go.uber.org/zap"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/hms-dbmi/secret-getter/util"
+	"go.uber.org/zap"
 )
 
 // File client implemented
@@ -19,9 +20,11 @@ type File struct {
 
 // NewFileClient ... create new Vault client
 func NewFileClient(conf flag.FlagSet) (Client, error) {
+	// NewFileClient method logger
 	var logger, _ = zap.NewProduction()
 	defer logger.Sync()
 
+	// File struct logger
 	var err error
 	clientLogger, err := zap.NewProduction()
 	defer clientLogger.Sync()
@@ -60,16 +63,16 @@ func NewFileClient(conf flag.FlagSet) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer fi.Close()
+
 	scanner := bufio.NewScanner(fi)
 	// keys cannot have spaces
 	// values may have spaces within quotes
 	exp := regexp.MustCompile("^(?P<key>[^[:space:]|=]+)(\\s|\\t)*=(\\s|\\t)*(?P<value>.*)$")
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		logger.Debug("", zap.String("line", line))
 
-		match := exp.FindAllStringSubmatch(line, -1)
+		match := exp.FindAllStringSubmatch(scanner.Text(), -1)
 		if match == nil || len(match) == 0 {
 			continue
 		}

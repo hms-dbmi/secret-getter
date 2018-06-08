@@ -2,9 +2,11 @@ package client
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/hms-dbmi/vault-getter/util"
 	"go.uber.org/zap"
 )
 
@@ -18,17 +20,21 @@ type Vault struct {
 
 // NewVaultClient ... create new Vault client
 func NewVaultClient(conf flag.FlagSet) (Client, error) {
+	// NewVaultClient logger
 	var logger, _ = zap.NewProduction()
 	defer logger.Sync()
 
+	// Vault struct logger
 	var err error
 	clientLogger, err := zap.NewProduction()
+
 	defer clientLogger.Sync()
 
 	if err != nil {
 		logger.Fatal("failed to initialize logger", zap.Error(err))
 	}
 
+	// initialize Vault Client
 	vaultClient, err := api.NewClient(nil)
 
 	if err != nil {
@@ -36,25 +42,30 @@ func NewVaultClient(conf flag.FlagSet) (Client, error) {
 		logger.Fatal("failed to initialize Vault client", zap.Error(err))
 	}
 
-	// specific environment variable. VAULT_ADDR, VAULT_TOKEN, VAULT_PATH
-	// Vault address
-	// Vault path
-	// Vault access token are encrypted variables
+	// Set Address
+	address := conf.Lookup("addr").Value.String()
+	if address != "" {
+		vaultClient.SetAddress(address)
+	} // else VAULT_ADDR will be used
 
-	for _, key := range []string{"VAULT_ADDR", "VAULT_TOKEN", "VAULT_PATH"} {
-		if value := os.Getenv(key); value != "" {
-			conf.Set(key, value)
+	// Set Token
+	// is the token within a file?
+	token := conf.Lookup("token").Value.String()
+
+	if info, err := os.Stat(token); err == nil && !util.IsDirectory(info) {
+		// grab it as a single batch
+		data, err := ioutil.ReadFile(token)
+		if err != nil {
+			logger.Error("failed to read token file", zap.Error(err))
 		}
 
-	}
-
-	if conf.Lookup("path").Value.String() == "" {
-		conf.Usage()
-		logger.Fatal("Vault path must be defined")
-	}
-
-	vaultClient.SetAddress(conf.Lookup("addr").Value.String())
-	vaultClient.SetToken(conf.Lookup("token").Value.String())
+		// only set non-empty token
+		if len(data) > 0 {
+			vaultClient.SetToken(string(data))
+		}
+	} else if token != "" {
+		vaultClient.SetToken(token)
+	} // else VAULT_TOKEN will be used
 
 	return &Vault{
 		Client: vaultClient,
@@ -70,8 +81,8 @@ func (v *Vault) Name() string {
 // List returns list of keys
 func (v *Vault) List(path string) interface{} {
 	secret, err := v.Client.Logical().List(path)
-	if err != nil || secret.Data == nil || secret.Data["keys"] == nil {
-		v.logger.Error("Failed to list keys", zap.Errors("error", []error{err}))
+	if err != nil || secret == nil || secret.Data == nil || secret.Data["keys"] == nil {
+		v.logger.Warn("Failed to list keys", zap.Error(err))
 		// return empty interface
 		return interface{}(nil)
 	}

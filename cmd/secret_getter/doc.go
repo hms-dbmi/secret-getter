@@ -4,7 +4,6 @@ $ secret-getter vault
 
 available environment variables:
 - VAULT_ADDR
-- VAULT_PATH
 - VAULT_TOKEN
 
 command line arguments:
