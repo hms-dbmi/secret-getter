@@ -30,3 +30,6 @@
 
 [[constraint]]
   name = "go.uber.org/zap"
+
+[[constraint]]
+  name = "github.com/jcmturner/vaultmock"
