@@ -15,7 +15,7 @@ build: .GOPATH/.ok
 
 .PHONY: clean
 clean:
-	$Q rm -rf .GOPATH/.ok .GOPATH bin/vault_getter bin secret-getter
+	$Q rm -rf .GOPATH/.ok .GOPATH bin/secret_getter bin secret-getter
 
 .PHONY: test test-race
 # issue with golang & alpine (alpine uses musl library, not glibc)
