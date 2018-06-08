@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/hms-dbmi/vault-getter/util"
+	"github.com/hms-dbmi/secret-getter/util"
 	"go.uber.org/zap"
 )
 
