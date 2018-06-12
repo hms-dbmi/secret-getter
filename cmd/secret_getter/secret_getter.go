@@ -196,14 +196,16 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 			mainLogger.Error("Could not read file", zap.Error(err))
 			continue
 		}
+		defer fi.Close()
 		scanner := bufio.NewScanner(fi)
 
-		// create temp file
+		// create temp file for writing
 		fo, err := os.OpenFile(file+".tmp", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
 		if err != nil {
 			mainLogger.Error("Could not create file", zap.Error(err))
 			continue
 		}
+		defer fo.Close()
 		writer := bufio.NewWriter(fo)
 
 		// search for regex matches
@@ -246,8 +248,6 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 
 		}
 		writer.Flush()
-		fi.Close()
-		fo.Close()
 		os.Rename(file+".tmp", file)
 	}
 }
