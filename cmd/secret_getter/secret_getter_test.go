@@ -113,7 +113,7 @@ func TestMain(t *testing.T) {
 			t.Fatalf("process ran with err %v, want exit status %v", ret, tc.expectedExit)
 		}
 
-		for file, _ := range contents {
+		for file := range contents {
 			// check results
 			result, err := ioutil.ReadFile(files[1] + "/" + file.Name())
 			if err != nil ||
