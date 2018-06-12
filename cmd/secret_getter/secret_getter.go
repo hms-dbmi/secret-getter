@@ -94,6 +94,7 @@ func main() {
 	mainLogger.Info("options", zap.Strings("options", options))
 
 	// set values
+	// TODO: look at this https://github.com/google/subcommands
 	switch sgCmd {
 	case "vault":
 		vaultCommand.Parse(options)
@@ -121,7 +122,7 @@ func main() {
 		vaultCommand.Usage()
 		fileCommand.Usage()
 	default:
-		fmt.Println("required secret-getter subcommand. Available: %v", client.Available())
+		fmt.Fprintln(os.Stdout, "requires secret_getter subcommand. Available:", client.Available())
 		os.Exit(1)
 	}
 
