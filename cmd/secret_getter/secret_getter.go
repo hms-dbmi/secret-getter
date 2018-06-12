@@ -16,12 +16,23 @@ import (
 )
 
 var (
-	logger, _ = zap.NewProduction()
-	files     string
-	suffixes  string
-	prefixes  string
-	order     string
-	path      string
+
+	// TODO: options available per flagset
+	// options := map[string][]flag.NewFlagSet
+
+	files         string
+	suffixes      string
+	prefixes      string
+	order         string
+	path          string
+	mainLogger, _ = zap.NewProduction()
+)
+
+const (
+	// SgCommand env variable for secret-getter
+	SgCommand = "SG_COMMAND"
+	// SgOptions env variable for secret-getter
+	SgOptions = "SG_OPTIONS"
 )
 
 func main() {
@@ -29,6 +40,7 @@ func main() {
 	// get vault values
 	// replace in files
 	// run main executable
+	defer mainLogger.Sync()
 
 	var err error
 	var cli client.Client
@@ -49,9 +61,39 @@ func main() {
 	fileCommand.String("files", "", "List of files to replace with Vault secrets")
 	fileCommand.String("order", "vault", "Order of precedence: vault, env, override")
 
-	switch os.Args[1] {
+	// available SG_COMMAND env variable
+	// SG_COMMAND overrides command line option
+	sgCmd, ok := os.LookupEnv(SgCommand)
+	if !ok || sgCmd == "" {
+		// if env SG_COMMAND is empty,
+		// option "file" or "vault" must be the the first command line argument
+		if len(os.Args) > 0 {
+			separate := strings.Split(os.Args[0], " ")
+			// if not file or vault, will fail during switch
+			sgCmd = separate[0]
+			os.Args[0] = strings.Join(separate[1:], " ")
+		}
+
+	}
+
+	sgEnvOptions, _ := os.LookupEnv(SgOptions)
+	var options []string
+	// loop through commannd line arguments and SG_OPTIONS for secret-getter options
+	// SG_OPTIONS overrides command line options
+	for _, option := range append(os.Args, strings.Split(sgEnvOptions, " ")...) {
+		// flags.Parse() do not like empty strings :/ -Andre
+		if option != "" {
+			options = append(options, option)
+		}
+	}
+
+	mainLogger.Info("command", zap.String("command", sgCmd))
+	mainLogger.Info("options", zap.Strings("options", options))
+
+	// set values
+	switch sgCmd {
 	case "vault":
-		vaultCommand.Parse(os.Args[2:])
+		vaultCommand.Parse(options)
 		path = vaultCommand.Lookup("path").Value.String()
 		files = vaultCommand.Lookup("files").Value.String()
 		prefixes = vaultCommand.Lookup("prefix").Value.String()
@@ -59,10 +101,10 @@ func main() {
 		order = vaultCommand.Lookup("order").Value.String()
 		cli, err = client.CreateClient("vault", *vaultCommand)
 		if err != nil {
-			logger.Fatal("faled to initialize Vault client", zap.Error(err))
+			mainLogger.Fatal("failed to initialize Vault client", zap.Error(err))
 		}
 	case "file":
-		fileCommand.Parse(os.Args[2:])
+		fileCommand.Parse(options)
 		path = fileCommand.Lookup("path").Value.String()
 		files = fileCommand.Lookup("files").Value.String()
 		prefixes = fileCommand.Lookup("prefix").Value.String()
@@ -70,7 +112,7 @@ func main() {
 		order = fileCommand.Lookup("order").Value.String()
 		cli, err = client.CreateClient("file", *fileCommand)
 		if err != nil {
-			logger.Fatal("faled to initialize file client", zap.Error(err))
+			mainLogger.Fatal("failed to initialize file client", zap.Error(err))
 		}
 	case "help":
 		vaultCommand.Usage()
@@ -80,11 +122,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	/*    if *version {
-	          fmt.Printf("Version: %s\n", Version)
-	      }
-	*/
-
 	// get secrets
 	decryptedSecrets, err := readSecrets(cli)
 
@@ -92,30 +129,23 @@ func main() {
 	if err == nil {
 		loadFiles(strings.Split(files, ","), decryptedSecrets, false)
 	}
-	// run next command
-
-	/*logger.Info("output: ", zap.Object("client", client), zap.Object("response", secret))
-	if err != nil {
-		logger.Fatal("failed to send request", zap.Error(err))
-	}*/
 
 	// unset vault token variable
 	os.Setenv("VAULT_TOKEN", "")
 
+	// run next command
 	args := os.Args[1:]
 	for i, arg := range args {
 		if arg == "--" {
 			args = args[i+1:]
 			if err := execute(args); err != nil {
-				logger.Fatal("failed to execute command",
+				mainLogger.Fatal("failed to execute command",
 					zap.Strings("args", args),
 					zap.Error(err))
 			}
 			break
 		}
 	}
-
-	defer logger.Sync()
 
 }
 
@@ -137,15 +167,15 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 	// exp = prefix (?P<var>[^suffix]*) suffix, e.g ${variable to index}
 	// for now, expect delimited strings, e.g. \\$ must be defined by user,
 	// should make sure to delimit all regex characters to prevent parsing fubar
-
 	exp := regexp.MustCompile(prefixes + "(?P<var>[^" + suffixes + "]*)" + suffixes)
-	logger.Debug("Searching for match.", zap.String("expression", exp.String()))
+	mainLogger.Debug("Searching for match.", zap.String("expression", exp.String()))
 	for _, file := range files {
 
 		// keep permissions the same
 		info, err := os.Stat(file)
 		if err != nil {
-			logger.Fatal("Could not get stats on file", zap.Error(err))
+			mainLogger.Error("Could not get stats on file", zap.Error(err))
+			continue
 		}
 
 		// if this is a directory, load those files, then move through to next element
@@ -163,23 +193,27 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 		// open file and start reading it line-by-line
 		fi, err := os.OpenFile(file, os.O_RDONLY, info.Mode())
 		if err != nil {
-			logger.Fatal("Could not read file", zap.Error(err))
+			mainLogger.Error("Could not read file", zap.Error(err))
+			continue
 		}
 		scanner := bufio.NewScanner(fi)
 
+		// create temp file
 		fo, err := os.OpenFile(file+".tmp", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
 		if err != nil {
-			logger.Fatal("Could not create file", zap.Error(err))
+			mainLogger.Error("Could not create file", zap.Error(err))
+			continue
 		}
 		writer := bufio.NewWriter(fo)
 
+		// search for regex matches
 		for scanner.Scan() {
 			line := scanner.Text()
-			logger.Debug("", zap.String("line", line))
+			mainLogger.Debug("", zap.String("line", line))
 
 			match := exp.FindAllStringSubmatch(line, -1)
 			if match == nil || len(match) == 0 {
-				logger.Debug("no variables in line found matching pattern", zap.String("regex", exp.String()))
+				mainLogger.Debug("no variables in line found matching pattern", zap.String("regex", exp.String()))
 				util.WriteLine(writer, &line)
 				continue
 			}
@@ -190,10 +224,10 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 					if name != "var" {
 						continue
 					}
-					logger.Debug("variable found in line", zap.String("match", match[j][i]))
-					// replace
-					variable := match[j][i]
+					mainLogger.Debug("variable found in line", zap.String("match", match[j][i]))
 
+					// replace with non-empty secret
+					variable := match[j][i]
 					if (*secrets)[variable] != "" {
 						// order==env will use environment variable non-empty value instead of vault value
 						if order == "env" && os.Getenv(variable) != "" {
@@ -203,7 +237,7 @@ func loadFiles(files []string, secrets *map[string]string, skipDir bool) {
 						line = strings.Replace(line, match[j][0], (*secrets)[variable], 1)
 
 					} else {
-						logger.Debug("unknown key", zap.String("variable", match[j][0]))
+						mainLogger.Debug("unknown key", zap.String("variable", match[j][0]))
 					}
 				}
 			}
@@ -223,38 +257,22 @@ func readSecrets(cli client.Client) (*map[string]string, error) {
 
 	// return list of secret keys
 	secrets := cli.List(path)
+
 	// get secret values
 	secretsOut := make(map[string]string)
 	if keys, ok := secrets.([]interface{}); ok {
+
 		for _, key := range keys {
 
 			key := key.(string)
 
 			value := cli.Read(path + "/" + key)
-			logger.Debug("", zap.String("key", key))
-
-			// HACK TODO: FIX THIS. This limits our secrets options to stack/stack_key
-			// If stack/stack_key exists, THEN split, and keep legacy and new format
-			// We *could* keep original format AND uppercase .... something to think about
-			// Ideally, we should *not* be making guesses on the format of the key
-			// e.g nhanes-prod_secret -> nhanes-prod_secret (legacy) && SECRET - Andre
-
-			// standard format
-			if std := (strings.SplitN(key, "_", 2))[1]; std != "" {
-				std = strings.ToUpper(std)
-				secretsOut[std] = value
-				logger.Debug("", zap.String("key", std))
-
-				// order=override will override environment variables with vault values
-				if _, ok := os.LookupEnv(std); order == "override" && ok {
-					// note parent process env variables is not being updated
-					// requires syscall
-					os.Setenv(std, secretsOut[std])
-				}
-			}
-
-			// legacy format
+			// TODO: secretsOut should be internal to the client - Andre
 			secretsOut[key] = value
+			// removed legacy format conversion. We are no longer hacking for
+			// stack/stack_key path/key formats
+			// additionally, keys are now case sensitive - Andre
+
 			// order=override will override environment variables with vault values
 			if _, ok := os.LookupEnv(key); order == "override" && ok {
 				os.Setenv(key, secretsOut[key])

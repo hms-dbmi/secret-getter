@@ -21,9 +21,6 @@ type Vault struct {
 
 // NewVaultClient ... create new Vault client
 func NewVaultClient(conf flag.FlagSet) (Client, error) {
-	// NewVaultClient logger
-	var logger, _ = zap.NewProduction()
-	defer logger.Sync()
 
 	// Vault struct logger
 	var err error
@@ -32,7 +29,7 @@ func NewVaultClient(conf flag.FlagSet) (Client, error) {
 	defer clientLogger.Sync()
 
 	if err != nil {
-		logger.Fatal("failed to initialize logger", zap.Error(err))
+		clientLogger.Fatal("failed to initialize logger", zap.Error(err))
 	}
 
 	// initialize Vault Client
@@ -40,7 +37,7 @@ func NewVaultClient(conf flag.FlagSet) (Client, error) {
 
 	if err != nil {
 		conf.Usage()
-		logger.Fatal("failed to initialize Vault client", zap.Error(err))
+		clientLogger.Fatal("failed to initialize Vault client", zap.Error(err))
 	}
 
 	// Set Address
@@ -57,7 +54,7 @@ func NewVaultClient(conf flag.FlagSet) (Client, error) {
 		// grab it as a single batch
 		data, err := ioutil.ReadFile(token)
 		if err != nil {
-			logger.Error("failed to read token file", zap.Error(err))
+			clientLogger.Error("failed to read token file", zap.Error(err))
 		}
 
 		// only set non-empty token

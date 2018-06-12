@@ -15,14 +15,11 @@ import (
 // File client implemented
 type File struct {
 	logger *zap.Logger
-	secret map[string]string
+	secret map[string]interface{}
 }
 
 // NewFileClient ... create new Vault client
 func NewFileClient(conf flag.FlagSet) (Client, error) {
-	// NewFileClient method logger
-	var logger, _ = zap.NewProduction()
-	defer logger.Sync()
 
 	// File struct logger
 	var err error
@@ -33,12 +30,7 @@ func NewFileClient(conf flag.FlagSet) (Client, error) {
 		return nil, err
 	}
 
-	data := make(map[string]string)
-
-	fileClient := &File{
-		logger: clientLogger,
-		secret: data,
-	}
+	data := make(map[string]interface{})
 
 	// open the file
 	filePath := conf.Lookup("path").Value.String()
@@ -89,6 +81,12 @@ func NewFileClient(conf flag.FlagSet) (Client, error) {
 			}
 		}
 	}
+
+	fileClient := &File{
+		logger: clientLogger,
+		secret: data,
+	}
+
 	return fileClient, nil
 }
 
@@ -99,13 +97,31 @@ func (f *File) Name() string {
 
 // List returns list of keys
 func (f *File) List(path string) interface{} {
-	return f.secret
+	// TODO: force clients to map their data into maps
+	// We are expecting data to be treated similarly to Vault client
+	// Vault client needs to be updated - Andre
+	if f.secret["__internal_keys"] != nil {
+		return f.secret["__internal_keys"]
+	}
+
+	keys := make([]interface{}, 0)
+	for key := range f.secret {
+		keys = append(keys, key)
+	}
+	f.secret["__internal_keys"] = keys
+	f.secret["__internal_path"] = path
+
+	return f.secret["__internal_keys"]
 }
 
 // Read returns value for path/key
 func (f *File) Read(path string) string {
-	if val, ok := f.secret[path]; ok {
-		return val
+	// TODO: need to ignore extended path
+	// lots of legacy dealing with Vault client expectations
+	// this will break if List() not called first. - Andre
+	path = strings.TrimPrefix(path, f.secret["__internal_path"].(string)+"/")
+	if val, ok := (f.secret)[path]; ok {
+		return val.(string)
 	}
 	return ""
 }

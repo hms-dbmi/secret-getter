@@ -31,8 +31,8 @@ func TestFileSecrets(t *testing.T) {
 
 	t.Logf("Name of client: %s", cli.Name())
 
-	if len(cli.List("").(map[string]string)) != 6 {
-		t.Errorf("result len of secrets: (%d), expected len: (%d)", len(cli.List("").(map[string]string)), 6)
+	if len(cli.List("").([]interface{})) != 6 {
+		t.Errorf("result len of secrets: (%d), expected len: (%d)", len(cli.List("").([]interface{})), 6)
 	}
 	for _, tc := range testCases {
 
@@ -56,7 +56,7 @@ func TestFileErrors(t *testing.T) {
 	_, err := CreateClient("file", *conf)
 
 	if err == nil {
-		t.Errorf("File does not exist")
+		t.Fail()
 	} else {
 		t.Logf("Error: (%s)", err.Error())
 	}
@@ -65,7 +65,7 @@ func TestFileErrors(t *testing.T) {
 
 	_, err = CreateClient("file", *conf)
 	if err == nil {
-		t.Errorf("Cannot allow directories as file paths")
+		t.Fail()
 	} else {
 		t.Logf("Error: (%s)", err.Error())
 	}

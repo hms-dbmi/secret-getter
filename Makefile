@@ -17,6 +17,14 @@ build: .GOPATH/.ok
 clean:
 	$Q rm -rf .GOPATH/.ok .GOPATH bin/secret_getter bin secret-getter
 
+.PHONY: mock
+mock:
+	cd client && mockery -all
+
+.PHONY: deps
+deps:
+	$Q cd $(GOPATH)/src/$(IMPORT_PATH) && dep ensure
+
 .PHONY: test test-race
 # issue with golang & alpine (alpine uses musl library, not glibc)
 # race calls built on glibc libraries -Andre

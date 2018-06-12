@@ -1,1 +1,1 @@
-${GROOVY_HOME}
+${secret_key1}
