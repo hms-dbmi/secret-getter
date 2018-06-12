@@ -63,24 +63,27 @@ func main() {
 
 	// available SG_COMMAND env variable
 	// SG_COMMAND overrides command line option
-	sgCmd, ok := os.LookupEnv(SgCommand)
-	if !ok || sgCmd == "" {
-		// if env SG_COMMAND is empty,
-		// option "file" or "vault" must be the the first command line argument
-		if len(os.Args) > 0 {
-			separate := strings.Split(os.Args[0], " ")
-			// if not file or vault, will fail during switch
-			sgCmd = separate[0]
-			os.Args[0] = strings.Join(separate[1:], " ")
-		}
+	sgCmd, _ := os.LookupEnv(SgCommand)
 
+	if len(os.Args) > 0 {
+		separate := strings.Split(os.Args[0], " ")
+		// command line argument will override
+		for _, avail := range client.Available() {
+			// first commmand line argument matches available client
+			// overrides SG_COMMAND env variable
+			if separate[0] == avail {
+				sgCmd = separate[0]
+				os.Args[0] = strings.Join(separate[1:], " ")
+				break
+			}
+		}
 	}
 
 	sgEnvOptions, _ := os.LookupEnv(SgOptions)
 	var options []string
 	// loop through commannd line arguments and SG_OPTIONS for secret-getter options
-	// SG_OPTIONS overrides command line options
-	for _, option := range append(os.Args, strings.Split(sgEnvOptions, " ")...) {
+	// command line options override SG_OPTIONS
+	for _, option := range append(strings.Split(sgEnvOptions, " "), os.Args...) {
 		// flags.Parse() do not like empty strings :/ -Andre
 		if option != "" {
 			options = append(options, option)
@@ -118,7 +121,7 @@ func main() {
 		vaultCommand.Usage()
 		fileCommand.Usage()
 	default:
-		fmt.Println("vault or file subcommand is required")
+		fmt.Println("required secret-getter subcommand. Available: %v", client.Available())
 		os.Exit(1)
 	}
 

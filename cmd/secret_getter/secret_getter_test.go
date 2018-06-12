@@ -46,11 +46,11 @@ func TestMain(t *testing.T) {
 		// SG_COMMAND
 		// SG_OPTIONS
 		// additional options found in args
-		// -- NOTE: duplicate options in args
+		// -- NOTE: duplicate options in args. Should override
 		{
-			"file",
-			"-prefix={ -suffix=} -files=" + files[1],
-			[]string{"-path=" + files[0], "-prefix=\\${"},
+			"vault",
+			"-prefix=\\${ -suffix=} -files=" + files[1],
+			[]string{"file -path=" + files[0], "-prefix={"},
 			true,
 		},
 		// SG_COMMAND

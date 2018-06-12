@@ -29,6 +29,15 @@ func Register(name string, factory Factory) {
 	clientFactories[name] = factory
 }
 
+// Available ... clients available to access secrets
+func Available() []string {
+	clients := make([]string, 0)
+	for key := range clientFactories {
+		clients = append(clients, key)
+	}
+	return clients
+}
+
 func init() {
 	Register("vault", NewVaultClient)
 	Register("file", NewFileClient)
