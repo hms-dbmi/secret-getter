@@ -10,7 +10,7 @@ all: test build
 
 .PHONY: hello
 build: .GOPATH/.ok
-	$Q go install $(if $V,-v) -ldflags='-w -s -X "main.Version=$(VERSION)"' -a -installsuffix cgo -o $(IMPORT_PATH)/cmd/secret_getter
+	$Q go install $(if $V,-v) -ldflags='-w -s -X "main.Version=$(VERSION)"' -a -installsuffix cgo $(IMPORT_PATH)/cmd/secret_getter
 
 .PHONY: clean
 clean:
