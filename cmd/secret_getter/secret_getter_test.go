@@ -3,12 +3,50 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/hms-dbmi/secret-getter/client/mocks"
+	"github.com/hms-dbmi/secret-getter/util"
 	"github.com/stretchr/testify/mock"
 )
+
+// os.Exit test
+func TestHelp(t *testing.T) {
+	if os.Getenv("TEST_HELP") == "1" {
+		oldArgs := os.Args
+		defer func() { os.Args = oldArgs }()
+		os.Args = []string{"", "help"}
+
+		main()
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=TestHelp")
+	cmd.Env = append(os.Environ(), "TEST_HELP=1")
+
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		t.Fatalf("Process ran with err %v, want os.Exit(0)", err)
+	}
+}
+
+// os.Exit test
+func TestNoClient(t *testing.T) {
+
+	if os.Getenv("TEST_NO_CLIENT") == "1" {
+		main()
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=TestNoClient")
+	cmd.Env = append(os.Environ(), "TEST_NO_CLIENT=1")
+
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	t.Fatalf("Process ran with err %v, want os.Exit(1)", err)
+}
 
 func TestMain(t *testing.T) {
 	oldArgs := os.Args
@@ -31,7 +69,7 @@ func TestMain(t *testing.T) {
 		{
 			"",
 			"-path=" + files[0] + " -files=" + files[1],
-			[]string{"file"},
+			[]string{"", "file"},
 			true,
 		},
 		// no SG_COMMAND
@@ -40,7 +78,7 @@ func TestMain(t *testing.T) {
 		{
 			"",
 			"-path=" + files[0],
-			[]string{"file -prefix={", "-suffix=}", "-files=" + files[1]},
+			[]string{"", "file -prefix={", "-suffix=}", "-files=" + files[1]},
 			true,
 		},
 		// SG_COMMAND
@@ -50,7 +88,7 @@ func TestMain(t *testing.T) {
 		{
 			"vault",
 			"-prefix=\\${ -suffix=} -files=" + files[1],
-			[]string{"file -path=" + files[0], "-prefix={"},
+			[]string{"", "file -path=" + files[0], "-prefix={"},
 			true,
 		},
 		// SG_COMMAND
@@ -59,7 +97,7 @@ func TestMain(t *testing.T) {
 		{
 			"file",
 			"",
-			[]string{"-path=" + files[0], "-prefix={", "-suffix=}", "-files=" + files[1]},
+			[]string{"", "-path=" + files[0], "-prefix={", "-suffix=}", "-files=" + files[1]},
 			true,
 		},
 	}
@@ -75,7 +113,7 @@ func TestMain(t *testing.T) {
 		contents := make(map[os.FileInfo][]byte)
 
 		// if not a directory && file does not exist
-		if info.IsDir() {
+		if util.IsDirectory(info) {
 			testfiles, err := ioutil.ReadDir(files[1])
 			if err != nil {
 				t.Fatal(err.Error())
@@ -203,19 +241,4 @@ func TestReplaceVars(t *testing.T) {
 
 	}
 
-}
-
-func TestHelp(t *testing.T) {
-	oldArgs := os.Args
-	defer func() { os.Args = oldArgs }()
-
-	// better handling of os.Exit() in tests. I'm still learning how to test in go! -Andre
-	os.Args = []string{"help"}
-	ret := t.Run("TestClientArgs:help", func(t *testing.T) {
-		main()
-
-	})
-	if !ret {
-		t.Fatalf("process ran with err %v, want exit status %v", ret, true)
-	}
 }

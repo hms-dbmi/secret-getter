@@ -65,15 +65,15 @@ func main() {
 	// SG_COMMAND overrides command line option
 	sgCmd, _ := os.LookupEnv(SgCommand)
 
-	if len(os.Args) > 0 {
-		separate := strings.Split(os.Args[0], " ")
+	if len(os.Args) > 1 {
+		separate := strings.Split(os.Args[1], " ")
 		// command line argument will override
 		for _, avail := range append(client.Available(), "help") {
 			// first commmand line argument matches available client
 			// overrides SG_COMMAND env variable
 			if separate[0] == avail {
 				sgCmd = separate[0]
-				os.Args[0] = strings.Join(separate[1:], " ")
+				os.Args[1] = strings.Join(separate[1:], " ")
 				break
 			}
 		}

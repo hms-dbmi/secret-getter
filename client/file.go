@@ -37,7 +37,7 @@ func NewFileClient(conf flag.FlagSet) (Client, error) {
 
 	if filePath == "" {
 		conf.Usage()
-		return nil, errors.New("File path must be defined.")
+		return nil, errors.New("File path must be defined (--path)")
 	}
 
 	info, err := os.Stat(filePath)
@@ -47,7 +47,7 @@ func NewFileClient(conf flag.FlagSet) (Client, error) {
 
 	// if this is a directory
 	if util.IsDirectory(info) {
-		return nil, errors.New("File path must be a file")
+		return nil, errors.New("File path must be a file (--path)")
 	}
 
 	// open file and start reading it line-by-line

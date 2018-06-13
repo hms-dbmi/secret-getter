@@ -5,12 +5,19 @@ IGNORED_PACKAGES := /vendor/ # space separated patterns
 Q := $(if $V,,@)
 V := 1 # print commands and build progress by default
 
+ifeq ($(REBUILD),1)
+A := -a
+endif
+
 .PHONY: all
 all: test build
 
+# -w -s omits symbol table and debug info
+# -a force rebuilding of packages that are already up-to-date
+# -v print the names of packages as they are compiled.
 .PHONY: hello
 build: .GOPATH/.ok
-	$Q go install $(if $V,-v) -ldflags='-w -s -X "main.Version=$(VERSION)"' -a -installsuffix cgo $(IMPORT_PATH)/cmd/secret_getter
+	$Q go install $(if $V,-v) -ldflags='-w -s -X "main.Version=$(VERSION)"' $A -installsuffix cgo $(IMPORT_PATH)/cmd/secret_getter
 
 .PHONY: clean
 clean:
