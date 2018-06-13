@@ -68,7 +68,7 @@ func main() {
 	if len(os.Args) > 0 {
 		separate := strings.Split(os.Args[0], " ")
 		// command line argument will override
-		for _, avail := range client.Available() {
+		for _, avail := range append(client.Available(), "help") {
 			// first commmand line argument matches available client
 			// overrides SG_COMMAND env variable
 			if separate[0] == avail {
@@ -90,8 +90,8 @@ func main() {
 		}
 	}
 
-	mainLogger.Info("command", zap.String("command", sgCmd))
-	mainLogger.Info("options", zap.Strings("options", options))
+	mainLogger.Debug("command", zap.String("command", sgCmd))
+	mainLogger.Debug("options", zap.Strings("options", options))
 
 	// set values
 	// TODO: look at this https://github.com/google/subcommands
@@ -121,6 +121,7 @@ func main() {
 	case "help":
 		vaultCommand.Usage()
 		fileCommand.Usage()
+		os.Exit(0)
 	default:
 		fmt.Fprintln(os.Stdout, "requires secret_getter subcommand. Available:", client.Available())
 		os.Exit(1)
