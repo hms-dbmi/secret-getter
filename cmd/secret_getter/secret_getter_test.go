@@ -127,20 +127,6 @@ func TestMain(t *testing.T) {
 
 }
 
-func TestHelp(t *testing.T) {
-	oldArgs := os.Args
-	defer func() { os.Args = oldArgs }()
-
-	os.Args = []string{"help"}
-	ret := t.Run("TestClientArgs:help", func(t *testing.T) {
-		main()
-
-	})
-	if !ret {
-		t.Fatalf("process ran with err %v, want exit status %v", ret, true)
-	}
-}
-
 func TestEnvVariables(t *testing.T) {
 
 	// test env lookup
@@ -217,4 +203,19 @@ func TestReplaceVars(t *testing.T) {
 
 	}
 
+}
+
+func TestHelp(t *testing.T) {
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	// better handling of os.Exit() in tests. I'm still learning how to test in go! -Andre
+	os.Args = []string{"help"}
+	ret := t.Run("TestClientArgs:help", func(t *testing.T) {
+		main()
+
+	})
+	if !ret {
+		t.Fatalf("process ran with err %v, want exit status %v", ret, true)
+	}
 }
