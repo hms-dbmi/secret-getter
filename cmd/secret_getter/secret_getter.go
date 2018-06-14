@@ -83,7 +83,7 @@ func main() {
 	var options []string
 	// loop through commannd line arguments and SG_OPTIONS for secret-getter options
 	// command line options override SG_OPTIONS
-	for _, option := range append(strings.Split(sgEnvOptions, " "), os.Args...) {
+	for _, option := range append(strings.Split(sgEnvOptions, " "), os.Args[1:]...) {
 		// flags.Parse() do not like empty strings :/ -Andre
 		if option != "" {
 			options = append(options, option)
