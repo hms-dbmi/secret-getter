@@ -90,8 +90,8 @@ func main() {
 		}
 	}
 
-	mainLogger.Debug("command", zap.String("command", sgCmd))
-	mainLogger.Debug("options", zap.Strings("options", options))
+	mainLogger.Info("command", zap.String("command", sgCmd))
+	mainLogger.Info("options", zap.Strings("options", options))
 
 	// set values
 	// TODO: look at this https://github.com/google/subcommands
